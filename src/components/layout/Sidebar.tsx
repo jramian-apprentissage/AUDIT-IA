@@ -53,8 +53,8 @@ export function Sidebar() {
 
       {/* Footer */}
       <div className="px-4 py-4 border-t border-zinc-800">
-        <div className="text-[10px] text-zinc-600">Jimmy — Auditeur</div>
-        <div className="text-[10px] text-zinc-700 mt-0.5">Cepremium</div>
+        <div className="text-[10px] text-zinc-600">Mathieu GROSS</div>
+        <div className="text-[10px] text-zinc-700 mt-0.5">Homeresine</div>
       </div>
     </aside>
   )

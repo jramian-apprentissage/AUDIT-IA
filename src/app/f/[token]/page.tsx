@@ -14,11 +14,17 @@ export default async function PublicFormPage({
 
   const supabase = createServiceClient()
 
-  const { data: assignation } = await supabase
-    .from('formulaire_assignation')
-    .select('*, formulaire:formulaires(*), intervenant:intervenants(*)')
-    .eq('token', token)
-    .single()
+  const [{ data: assignation }, { data: intervenants }] = await Promise.all([
+    supabase
+      .from('formulaire_assignation')
+      .select('*, formulaire:formulaires(*), intervenant:intervenants(*)')
+      .eq('token', token)
+      .single(),
+    supabase
+      .from('intervenants')
+      .select('id, prenom, nom, entite')
+      .order('semaine').order('nom'),
+  ])
 
   if (!assignation) return notFound()
   if (assignation.statut === 'reçu') {
@@ -39,7 +45,8 @@ export default async function PublicFormPage({
     <PublicFormClient
       assignation={assignation}
       formulaire={assignation.formulaire}
-      intervenantNom={nom || `${assignation.intervenant?.prenom} ${assignation.intervenant?.nom}`}
+      intervenant={assignation.intervenant}
+      intervenants={intervenants || []}
     />
   )
 }

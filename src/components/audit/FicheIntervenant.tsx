@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { formatDate, formatDateTime } from '@/lib/utils'
-import { X, Link2, CheckCircle2, Sparkles, Copy, Send, ChevronDown } from 'lucide-react'
+import { X, Link2, CheckCircle2, Sparkles, Copy, Send, ChevronDown, Clock } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
 interface Props {
@@ -291,29 +291,41 @@ export function FicheIntervenant({ intervenant, assignation, entretien, synthese
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-6">
 
-        {/* ONGLET FORMULAIRE */}
+        {/* ONGLET FORMULAIRE — affichage des réponses */}
         {tab === 'formulaire' && (
           <div className="space-y-4">
-            {!localAssignation || localAssignation.statut === 'non_envoyé' ? (
-              <div className="text-center py-12">
-                <div className="text-zinc-500 text-sm mb-2">Formulaire non envoyé</div>
-                <Button variant="primary" size="sm" onClick={copyLink}><Link2 size={13} /> Copier le lien</Button>
+            {!localAssignation ? (
+              /* Pas encore de formulaire assigné */
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <div className="w-12 h-12 rounded-xl bg-zinc-800 flex items-center justify-center mb-3">
+                  <Link2 size={20} className="text-zinc-600" />
+                </div>
+                <div className="text-zinc-400 text-sm font-medium mb-1">Formulaire non assigné</div>
+                <div className="text-zinc-600 text-xs">Assigne un formulaire via le bouton en haut à droite pour générer le lien.</div>
               </div>
-            ) : localAssignation?.statut === 'envoyé' ? (
-              <div className="text-center py-12 space-y-3">
-                <Badge variant="info">Envoyé le {formatDate(localAssignation?.date_envoi)}</Badge>
-                <div className="text-zinc-500 text-sm">En attente de réponse</div>
-                <Button variant="outline" size="sm" onClick={copyLink}><Copy size={13} /> Copier le lien</Button>
+            ) : localAssignation.statut !== 'reçu' ? (
+              /* Formulaire envoyé, en attente */
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <div className="w-12 h-12 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center mb-3">
+                  <Send size={18} className="text-blue-400" />
+                </div>
+                <Badge variant="info" className="mb-2">Envoyé le {formatDate(localAssignation.date_envoi)}</Badge>
+                <div className="text-zinc-500 text-sm">En attente de réponse de l&apos;intervenant</div>
+                <Button variant="outline" size="sm" className="mt-4" onClick={copyLink}>
+                  <Copy size={13} /> Copier le lien à relancer
+                </Button>
               </div>
             ) : (
+              /* Réponses reçues */
               <div className="space-y-4">
+                {/* Bandeau statut + résumé IA */}
                 <div className="flex items-center justify-between">
-                  <Badge variant="success">Reçu le {formatDate(localAssignation?.date_reception)}</Badge>
-                  {!localSynthese?.resume_formulaire ? (
+                  <Badge variant="success">Reçu le {formatDate(localAssignation.date_reception)}</Badge>
+                  {!localSynthese?.resume_formulaire && (
                     <Button variant="outline" size="sm" loading={loading === 'resume'} onClick={generateResumeFormulaire}>
                       <Sparkles size={13} /> Résumé IA
                     </Button>
-                  ) : null}
+                  )}
                 </div>
 
                 {localSynthese?.resume_formulaire && (
@@ -323,29 +335,45 @@ export function FicheIntervenant({ intervenant, assignation, entretien, synthese
                       <span className="text-xs font-semibold text-amber-400">Résumé IA</span>
                     </div>
                     <ul className="space-y-1.5">
-                      {localSynthese.resume_formulaire.points.map((p, i) => (
-                        <li key={i} className="text-sm text-zinc-300 flex gap-2">
-                          <span className="text-amber-500 mt-0.5">·</span> {p}
+                      {localSynthese.resume_formulaire.points.map((p, idx) => (
+                        <li key={idx} className="text-sm text-zinc-300 flex gap-2">
+                          <span className="text-amber-500 mt-0.5 flex-shrink-0">·</span> {p}
                         </li>
                       ))}
                     </ul>
                   </div>
                 )}
 
-                {/* Réponses */}
-                {(assignation as any).reponses && (
-                  <div className="space-y-3">
-                    <div className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Réponses</div>
-                    {((assignation as any).reponses as any[]).map((r: any, idx: number) => (
-                      <div key={idx} className="bg-zinc-900 border border-zinc-800 rounded-lg p-3">
-                        <div className="text-xs text-zinc-500 mb-1">Question {idx + 1}</div>
-                        <div className="text-sm text-zinc-200">
-                          {typeof r.reponse === 'string' ? r.reponse : JSON.stringify(r.reponse)}
+                {/* Réponses structurées par section */}
+                {(localAssignation as any).reponses?.length > 0 && (() => {
+                  const reponses: any[] = (localAssignation as any).reponses
+                  const form: any = (localAssignation as any).formulaire
+                  const sections: any[] = form?.sections || []
+
+                  return sections.map((s: any) => {
+                    const sReponses = reponses.filter((r: any) => r.section_id === s.id)
+                    if (!sReponses.length) return null
+                    return (
+                      <div key={s.id} className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
+                        <div className="px-4 py-2.5 bg-zinc-800/60 border-b border-zinc-800">
+                          <span className="text-xs font-semibold text-zinc-300">{s.titre}</span>
+                        </div>
+                        <div className="divide-y divide-zinc-800/60">
+                          {s.questions.map((q: any) => {
+                            const r = sReponses.find((r: any) => r.question_id === q.id)
+                            if (!r || r.reponse === null) return null
+                            return (
+                              <div key={q.id} className="px-4 py-3">
+                                <div className="text-[11px] text-zinc-500 mb-1.5">{q.libelle}</div>
+                                <ReponseDisplay reponse={r.reponse} type={q.type} colonnes={q.colonnes} outils_fixes={q.outils_fixes} />
+                              </div>
+                            )
+                          })}
                         </div>
                       </div>
-                    ))}
-                  </div>
-                )}
+                    )
+                  })
+                })()}
               </div>
             )}
           </div>
@@ -398,17 +426,22 @@ export function FicheIntervenant({ intervenant, assignation, entretien, synthese
               </div>
             </div>
 
-            {/* Questions IA */}
+            {/* Questions IA — actif seulement si réponses reçues */}
             <div>
               <div className="flex items-center justify-between mb-3">
                 <div className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Questions personnalisées IA</div>
-                {!localSynthese?.questions_generees && (
+                {localAssignation?.statut === 'reçu' && !localSynthese?.questions_generees && (
                   <Button variant="outline" size="sm" loading={loading === 'questions'} onClick={generateQuestions}>
                     <Sparkles size={13} /> Générer
                   </Button>
                 )}
               </div>
-              {localSynthese?.questions_generees ? (
+              {localAssignation?.statut !== 'reçu' ? (
+                <div className="flex items-center gap-2 p-3 bg-zinc-800/50 rounded-lg border border-zinc-800">
+                  <Clock size={13} className="text-zinc-600 flex-shrink-0" />
+                  <span className="text-xs text-zinc-600">Disponible une fois le formulaire reçu.</span>
+                </div>
+              ) : localSynthese?.questions_generees ? (
                 <div className="space-y-2">
                   {localSynthese.questions_generees.questions.map((q, idx) => (
                     <div key={idx} className="bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-2.5 text-sm text-zinc-300 flex gap-2">
@@ -417,7 +450,7 @@ export function FicheIntervenant({ intervenant, assignation, entretien, synthese
                   ))}
                 </div>
               ) : (
-                <div className="text-xs text-zinc-600 italic">Générez les questions personnalisées à partir des réponses au formulaire.</div>
+                <div className="text-xs text-zinc-500 italic">Cliquez sur &quot;Générer&quot; pour obtenir des questions personnalisées basées sur les réponses.</div>
               )}
             </div>
 
@@ -570,4 +603,93 @@ function SyntheseListBlock({ titre, items }: { titre: string; items: string[] })
       </ul>
     </div>
   )
+}
+
+function ReponseDisplay({ reponse, type, colonnes, outils_fixes }: {
+  reponse: unknown
+  type: string
+  colonnes?: string[]
+  outils_fixes?: string[]
+}) {
+  if (reponse === null || reponse === undefined) return <span className="text-xs text-zinc-600 italic">—</span>
+
+  // Tableau (Section B — tâches)
+  if (type === 'tableau' && typeof reponse === 'object' && colonnes) {
+    const rows = reponse as Record<number, Record<string, string>>
+    const filledRows = Object.entries(rows).filter(([, cells]) =>
+      Object.values(cells).some(v => v?.trim())
+    )
+    if (!filledRows.length) return <span className="text-xs text-zinc-600 italic">Aucune tâche renseignée</span>
+    return (
+      <div className="overflow-x-auto rounded-lg border border-zinc-800">
+        <table className="w-full text-xs">
+          <thead>
+            <tr className="border-b border-zinc-800 bg-zinc-800/50">
+              {colonnes.map(c => <th key={c} className="px-3 py-2 text-left text-zinc-400 font-medium whitespace-nowrap">{c}</th>)}
+            </tr>
+          </thead>
+          <tbody>
+            {filledRows.map(([ri, cells]) => (
+              <tr key={ri} className="border-b border-zinc-800/50 hover:bg-zinc-800/30">
+                {colonnes.map(c => (
+                  <td key={c} className="px-3 py-2 text-zinc-300">{cells[c] || '—'}</td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )
+  }
+
+  // Tableau outils (Section C)
+  if (type === 'tableau_outils' && typeof reponse === 'object' && colonnes) {
+    const rows = reponse as Record<number, Record<string, string>>
+    const allTools = [...(outils_fixes || []), 'Autre', 'Autre']
+    return (
+      <div className="overflow-x-auto rounded-lg border border-zinc-800">
+        <table className="w-full text-xs">
+          <thead>
+            <tr className="border-b border-zinc-800 bg-zinc-800/50">
+              {colonnes.map(c => <th key={c} className="px-3 py-2 text-left text-zinc-400 font-medium whitespace-nowrap">{c}</th>)}
+            </tr>
+          </thead>
+          <tbody>
+            {allTools.map((tool, ri) => {
+              const cells = rows[ri] || {}
+              const hasData = Object.values(cells).some(v => v?.trim())
+              if (!hasData && ri >= (outils_fixes?.length || 0)) return null
+              return (
+                <tr key={ri} className="border-b border-zinc-800/50 hover:bg-zinc-800/30">
+                  <td className="px-3 py-2 text-zinc-400 font-medium">{cells[colonnes[0]] || tool}</td>
+                  {colonnes.slice(1).map(c => (
+                    <td key={c} className="px-3 py-2 text-zinc-300">{cells[c] || '—'}</td>
+                  ))}
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+    )
+  }
+
+  // Texte simple
+  if (typeof reponse === 'string') {
+    return <p className="text-sm text-zinc-300 leading-relaxed whitespace-pre-wrap">{reponse}</p>
+  }
+
+  // Nombre (échelle)
+  if (typeof reponse === 'number') {
+    return (
+      <div className="flex items-center gap-1.5">
+        {[1,2,3,4,5].map(n => (
+          <div key={n} className={`w-7 h-7 rounded-md text-xs font-bold flex items-center justify-center ${n === reponse ? 'bg-amber-500 text-black' : 'bg-zinc-800 text-zinc-600'}`}>{n}</div>
+        ))}
+        <span className="text-xs text-zinc-500 ml-1">{reponse}/5</span>
+      </div>
+    )
+  }
+
+  return <span className="text-sm text-zinc-300">{JSON.stringify(reponse)}</span>
 }

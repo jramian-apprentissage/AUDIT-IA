@@ -52,10 +52,14 @@ export interface Question {
   id: string
   libelle: string
   description?: string
-  type: 'texte_court' | 'texte_long' | 'tableau' | 'select' | 'multi_select' | 'echelle' | 'date'
+  type: 'texte_court' | 'texte_long' | 'tableau' | 'tableau_outils' | 'select' | 'multi_select' | 'echelle' | 'date' | 'intervenant_select'
   obligatoire: boolean
   options?: string[]
   colonnes?: string[]
+  lignes?: number
+  placeholder_colonnes?: string[]
+  outils_fixes?: string[]
+  lignes_libres?: number
 }
 
 export interface FormulaireAssignation {

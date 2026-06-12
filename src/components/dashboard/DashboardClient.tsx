@@ -241,7 +241,7 @@ export function DashboardClient({ mission, intervenants, assignations, entretien
       {/* Bloc 4 — Mission : Objectifs, Périmètre, Règles */}
       <div className="grid grid-cols-3 gap-4">
 
-        {/* 1.2 Objectifs */}
+        {/* 1 Objectifs */}
         <Card className="flex flex-col">
           <CardHeader>
             <div className="flex items-center gap-2">
@@ -249,7 +249,7 @@ export function DashboardClient({ mission, intervenants, assignations, entretien
                 <Target size={14} className="text-amber-400" />
               </div>
               <div>
-                <div className="text-[10px] text-zinc-500 font-medium uppercase tracking-wide">1.2</div>
+                <div className="text-[10px] text-zinc-500 font-medium uppercase tracking-wide">1</div>
                 <CardTitle>Objectifs de l&apos;audit</CardTitle>
               </div>
             </div>
@@ -274,7 +274,7 @@ export function DashboardClient({ mission, intervenants, assignations, entretien
           </CardContent>
         </Card>
 
-        {/* 1.3 Périmètre */}
+        {/* 2 Périmètre */}
         <Card className="flex flex-col">
           <CardHeader>
             <div className="flex items-center gap-2">
@@ -282,7 +282,7 @@ export function DashboardClient({ mission, intervenants, assignations, entretien
                 <Map size={14} className="text-blue-400" />
               </div>
               <div>
-                <div className="text-[10px] text-zinc-500 font-medium uppercase tracking-wide">1.3</div>
+                <div className="text-[10px] text-zinc-500 font-medium uppercase tracking-wide">2</div>
                 <CardTitle>Périmètre de l&apos;audit</CardTitle>
               </div>
             </div>
@@ -333,7 +333,7 @@ export function DashboardClient({ mission, intervenants, assignations, entretien
           </CardContent>
         </Card>
 
-        {/* 4.2 Règles de fonctionnement */}
+        {/* 3 Règles de fonctionnement */}
         <Card className="flex flex-col">
           <CardHeader>
             <div className="flex items-center gap-2">
@@ -341,7 +341,7 @@ export function DashboardClient({ mission, intervenants, assignations, entretien
                 <BookOpen size={14} className="text-purple-400" />
               </div>
               <div>
-                <div className="text-[10px] text-zinc-500 font-medium uppercase tracking-wide">4.2</div>
+                <div className="text-[10px] text-zinc-500 font-medium uppercase tracking-wide">3</div>
                 <CardTitle>Règles de fonctionnement</CardTitle>
               </div>
             </div>

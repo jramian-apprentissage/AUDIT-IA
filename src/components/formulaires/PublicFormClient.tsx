@@ -23,6 +23,7 @@ export function PublicFormClient({ assignation, formulaire, intervenant, interve
     return init
   })
   const [tableData, setTableData] = useState<Record<string, Record<number, Record<string, string>>>>({})
+  const [extraRows, setExtraRows] = useState<Record<string, number>>({})
   const [currentSection, setCurrentSection] = useState(0)
   const [submitted, setSubmitted] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -194,6 +195,8 @@ export function PublicFormClient({ assignation, formulaire, intervenant, interve
                   onTableChange={(row, col, v) => setTableCell(q.id, row, col, v)}
                   intervenants={intervenants}
                   lockedIntervenantNom={intervenant ? `${intervenant.prenom} ${intervenant.nom}` : undefined}
+                  extraRows={extraRows[q.id] || 0}
+                  onAddRow={() => setExtraRows(prev => ({ ...prev, [q.id]: (prev[q.id] || 0) + 1 }))}
                 />
               </div>
             ))}
@@ -243,7 +246,7 @@ export function PublicFormClient({ assignation, formulaire, intervenant, interve
   )
 }
 
-function QuestionInput({ q, value, onChange, tableData, onTableChange, intervenants, lockedIntervenantNom }: {
+function QuestionInput({ q, value, onChange, tableData, onTableChange, intervenants, lockedIntervenantNom, extraRows, onAddRow }: {
   q: Question
   value: unknown
   onChange: (v: unknown) => void
@@ -251,6 +254,8 @@ function QuestionInput({ q, value, onChange, tableData, onTableChange, intervena
   onTableChange: (row: number, col: string, v: string) => void
   intervenants: Intervenant[]
   lockedIntervenantNom?: string
+  extraRows: number
+  onAddRow: () => void
 }) {
   const base = 'w-full border border-zinc-200 rounded-xl px-4 py-3 text-sm text-zinc-800 focus:outline-none focus:ring-2 focus:ring-amber-400/40 focus:border-amber-400 bg-zinc-50 transition-all'
 
@@ -347,38 +352,49 @@ function QuestionInput({ q, value, onChange, tableData, onTableChange, intervena
   if (q.type === 'tableau') {
     const cols = q.colonnes || []
     const ph = q.placeholder_colonnes || []
-    const rows = q.lignes || 7
+    const rows = (q.lignes || 7) + extraRows
 
     return (
-      <div className="overflow-x-auto rounded-xl border border-zinc-200">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="bg-zinc-50 border-b border-zinc-200">
-              {cols.map((c, ci) => (
-                <th key={c} className="px-3 py-2.5 text-left text-xs font-semibold text-zinc-500 whitespace-nowrap">
-                  {c}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {Array.from({ length: rows }).map((_, ri) => (
-              <tr key={ri} className={ri % 2 === 0 ? 'bg-white' : 'bg-zinc-50/50'}>
+      <div className="space-y-2">
+        <div className="overflow-x-auto rounded-xl border border-zinc-200">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-zinc-50 border-b border-zinc-200">
+                <th className="px-3 py-2.5 text-left text-xs font-semibold text-zinc-400 w-8">#</th>
                 {cols.map((c, ci) => (
-                  <td key={c} className="border-b border-zinc-100 p-0">
-                    <input
-                      type="text"
-                      value={tableData?.[ri]?.[c] || ''}
-                      onChange={e => onTableChange(ri, c, e.target.value)}
-                      placeholder={ph[ci] || ''}
-                      className="w-full px-3 py-2.5 text-xs text-zinc-700 placeholder:text-zinc-300 focus:outline-none focus:bg-amber-50 bg-transparent transition-colors min-w-[100px]"
-                    />
-                  </td>
+                  <th key={c} className="px-3 py-2.5 text-left text-xs font-semibold text-zinc-500 whitespace-nowrap">
+                    {c}
+                  </th>
                 ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {Array.from({ length: rows }).map((_, ri) => (
+                <tr key={ri} className={ri % 2 === 0 ? 'bg-white' : 'bg-zinc-50/50'}>
+                  <td className="border-b border-zinc-100 px-3 py-2.5 text-xs text-zinc-300 text-center">{ri + 1}</td>
+                  {cols.map((c, ci) => (
+                    <td key={c} className="border-b border-zinc-100 p-0">
+                      <input
+                        type="text"
+                        value={tableData?.[ri]?.[c] || ''}
+                        onChange={e => onTableChange(ri, c, e.target.value)}
+                        placeholder={ph[ci] || ''}
+                        className="w-full px-3 py-2.5 text-xs text-zinc-700 placeholder:text-zinc-300 focus:outline-none focus:bg-amber-50 bg-transparent transition-colors min-w-[100px]"
+                      />
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <button
+          type="button"
+          onClick={onAddRow}
+          className="flex items-center gap-2 text-xs text-amber-600 hover:text-amber-700 font-medium px-3 py-2 rounded-lg hover:bg-amber-50 transition-all border border-dashed border-amber-300 w-full justify-center"
+        >
+          <span className="text-base leading-none">+</span> Ajouter une ligne
+        </button>
       </div>
     )
   }
@@ -387,74 +403,97 @@ function QuestionInput({ q, value, onChange, tableData, onTableChange, intervena
   if (q.type === 'tableau_outils') {
     const cols = q.colonnes || []
     const outilsFixes = q.outils_fixes || []
-    const ligresLibres = q.lignes_libres || 2
-    const totalRows = outilsFixes.length + ligresLibres
+    const lignesLibres = (q.lignes_libres || 2) + extraRows
 
     return (
-      <div className="overflow-x-auto rounded-xl border border-zinc-200">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="bg-zinc-50 border-b border-zinc-200">
-              {cols.map(c => (
-                <th key={c} className="px-3 py-2.5 text-left text-xs font-semibold text-zinc-500 whitespace-nowrap">{c}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {outilsFixes.map((outil, ri) => (
-              <tr key={ri} className={ri % 2 === 0 ? 'bg-white' : 'bg-zinc-50/50'}>
-                <td className="border-b border-zinc-100 px-3 py-2.5">
-                  <span className="text-xs font-medium text-zinc-600">{outil}</span>
-                </td>
-                {cols.slice(1).map(c => (
-                  <td key={c} className="border-b border-zinc-100 p-0">
-                    {c === 'Satisfaction (1-5)' ? (
-                      <div className="flex gap-1 px-2 py-1">
-                        {[1,2,3,4,5].map(n => (
-                          <button key={n} type="button"
-                            onClick={() => onTableChange(ri, c, String(n))}
-                            className={`w-6 h-6 rounded text-[10px] font-bold transition-all border ${
-                              tableData?.[ri]?.[c] === String(n)
-                                ? 'border-amber-500 bg-amber-500 text-white'
-                                : 'border-zinc-200 text-zinc-400 hover:border-amber-300'
-                            }`}
-                          >{n}</button>
-                        ))}
-                      </div>
-                    ) : (
-                      <input
-                        type="text"
-                        value={tableData?.[ri]?.[c] || ''}
-                        onChange={e => onTableChange(ri, c, e.target.value)}
-                        placeholder={c === 'Fréquence' ? 'Quotidien…' : 'Décrire…'}
-                        className="w-full px-3 py-2.5 text-xs text-zinc-700 placeholder:text-zinc-300 focus:outline-none focus:bg-amber-50 bg-transparent transition-colors min-w-[100px]"
-                      />
-                    )}
-                  </td>
+      <div className="space-y-2">
+        <div className="overflow-x-auto rounded-xl border border-zinc-200">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-zinc-50 border-b border-zinc-200">
+                {cols.map(c => (
+                  <th key={c} className="px-3 py-2.5 text-left text-xs font-semibold text-zinc-500 whitespace-nowrap">{c}</th>
                 ))}
               </tr>
-            ))}
-            {/* Lignes libres */}
-            {Array.from({ length: ligresLibres }).map((_, idx) => {
-              const ri = outilsFixes.length + idx
-              return (
-                <tr key={`libre-${idx}`} className={ri % 2 === 0 ? 'bg-white' : 'bg-zinc-50/50'}>
-                  {cols.map((c, ci) => (
+            </thead>
+            <tbody>
+              {outilsFixes.map((outil, ri) => (
+                <tr key={ri} className={ri % 2 === 0 ? 'bg-white' : 'bg-zinc-50/50'}>
+                  <td className="border-b border-zinc-100 px-3 py-2.5">
+                    <span className="text-xs font-medium text-zinc-600">{outil}</span>
+                  </td>
+                  {cols.slice(1).map(c => (
                     <td key={c} className="border-b border-zinc-100 p-0">
-                      <input
-                        type="text"
-                        value={tableData?.[ri]?.[c] || ''}
-                        onChange={e => onTableChange(ri, c, e.target.value)}
-                        placeholder={ci === 0 ? 'Autre outil…' : c === 'Satisfaction (1-5)' ? '1-5' : ''}
-                        className="w-full px-3 py-2.5 text-xs text-zinc-700 placeholder:text-zinc-300 focus:outline-none focus:bg-amber-50 bg-transparent transition-colors min-w-[100px]"
-                      />
+                      {c === 'Satisfaction (1-5)' ? (
+                        <div className="flex gap-1 px-2 py-1">
+                          {[1,2,3,4,5].map(n => (
+                            <button key={n} type="button"
+                              onClick={() => onTableChange(ri, c, String(n))}
+                              className={`w-6 h-6 rounded text-[10px] font-bold transition-all border ${
+                                tableData?.[ri]?.[c] === String(n)
+                                  ? 'border-amber-500 bg-amber-500 text-white'
+                                  : 'border-zinc-200 text-zinc-400 hover:border-amber-300'
+                              }`}
+                            >{n}</button>
+                          ))}
+                        </div>
+                      ) : (
+                        <input
+                          type="text"
+                          value={tableData?.[ri]?.[c] || ''}
+                          onChange={e => onTableChange(ri, c, e.target.value)}
+                          placeholder={c === 'Fréquence' ? 'Quotidien…' : 'Décrire…'}
+                          className="w-full px-3 py-2.5 text-xs text-zinc-700 placeholder:text-zinc-300 focus:outline-none focus:bg-amber-50 bg-transparent transition-colors min-w-[100px]"
+                        />
+                      )}
                     </td>
                   ))}
                 </tr>
-              )
-            })}
-          </tbody>
-        </table>
+              ))}
+              {/* Lignes libres */}
+              {Array.from({ length: lignesLibres }).map((_, idx) => {
+                const ri = outilsFixes.length + idx
+                return (
+                  <tr key={`libre-${idx}`} className={ri % 2 === 0 ? 'bg-white' : 'bg-zinc-50/50'}>
+                    {cols.map((c, ci) => (
+                      <td key={c} className="border-b border-zinc-100 p-0">
+                        {c === 'Satisfaction (1-5)' ? (
+                          <div className="flex gap-1 px-2 py-1">
+                            {[1,2,3,4,5].map(n => (
+                              <button key={n} type="button"
+                                onClick={() => onTableChange(ri, c, String(n))}
+                                className={`w-6 h-6 rounded text-[10px] font-bold transition-all border ${
+                                  tableData?.[ri]?.[c] === String(n)
+                                    ? 'border-amber-500 bg-amber-500 text-white'
+                                    : 'border-zinc-200 text-zinc-400 hover:border-amber-300'
+                                }`}
+                              >{n}</button>
+                            ))}
+                          </div>
+                        ) : (
+                          <input
+                            type="text"
+                            value={tableData?.[ri]?.[c] || ''}
+                            onChange={e => onTableChange(ri, c, e.target.value)}
+                            placeholder={ci === 0 ? 'Autre outil…' : c === 'Fréquence' ? 'Quotidien…' : 'Décrire…'}
+                            className="w-full px-3 py-2.5 text-xs text-zinc-700 placeholder:text-zinc-300 focus:outline-none focus:bg-amber-50 bg-transparent transition-colors min-w-[100px]"
+                          />
+                        )}
+                      </td>
+                    ))}
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+        <button
+          type="button"
+          onClick={onAddRow}
+          className="flex items-center gap-2 text-xs text-amber-600 hover:text-amber-700 font-medium px-3 py-2 rounded-lg hover:bg-amber-50 transition-all border border-dashed border-amber-300 w-full justify-center"
+        >
+          <span className="text-base leading-none">+</span> Ajouter un outil
+        </button>
       </div>
     )
   }

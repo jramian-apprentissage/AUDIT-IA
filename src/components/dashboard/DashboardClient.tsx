@@ -5,8 +5,7 @@ import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { formatDate, daysSince, isDatePassed } from '@/lib/utils'
-import { AlertTriangle, CheckCircle2, Clock, Users, FileText, Calendar, TrendingUp, Bell } from 'lucide-react'
-import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend } from 'recharts'
+import { AlertTriangle, CheckCircle2, Clock, FileText, Calendar, Bell, Target, Map, BookOpen, Mic, FileCheck, Clock3, Plus } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
 interface Props {
@@ -42,24 +41,6 @@ export function DashboardClient({ mission, intervenants, assignations, entretien
 
   // Taux de complétion global
   const completionRate = totalPrevus > 0 ? Math.round((realises / totalPrevus) * 100) : 0
-
-  // Donut data
-  const nonEnvoyes = totalIntervenants - assignations.length
-  const donutData = [
-    { name: 'Non envoyé', value: nonEnvoyes, color: '#52525B' },
-    { name: 'Envoyé', value: envoyes - recus, color: '#3B82F6' },
-    { name: 'Reçu', value: recus, color: '#10B981' },
-    { name: 'Réalisé', value: realises, color: '#F59E0B' },
-  ].filter(d => d.value > 0)
-
-  // Bar data par entité
-  const entites = ['Distri Résine', 'Home Résine', 'Résilux', 'HR Construction']
-  const barData = entites.map(entite => {
-    const total = intervenants.filter(i => i.entite === entite).length
-    const ids = intervenants.filter(i => i.entite === entite).map(i => i.id)
-    const done = entretiens.filter(e => ids.includes(e.intervenant_id) && e.statut === 'Réalisé').length
-    return { entite: entite.split(' ')[0], total, done }
-  })
 
   // Alertes
   const alertes: { type: 'warning' | 'info'; message: string; action: string; onClick: () => void }[] = []
@@ -270,57 +251,154 @@ export function DashboardClient({ mission, intervenants, assignations, entretien
         </CardContent>
       </Card>
 
-      {/* Bloc 4 — Graphiques */}
-      <div className="grid grid-cols-2 gap-4">
-        <Card>
+      {/* Bloc 4 — Mission : Objectifs, Périmètre, Règles */}
+      <div className="grid grid-cols-3 gap-4">
+
+        {/* 1.2 Objectifs */}
+        <Card className="flex flex-col">
           <CardHeader>
-            <CardTitle>Intervenants par statut</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-6">
-              <ResponsiveContainer width={160} height={160}>
-                <PieChart>
-                  <Pie data={donutData} cx="50%" cy="50%" innerRadius={45} outerRadius={70} dataKey="value" strokeWidth={0}>
-                    {donutData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
-                  </Pie>
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="flex flex-col gap-2">
-                {donutData.map(d => (
-                  <div key={d.name} className="flex items-center gap-2">
-                    <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: d.color }} />
-                    <span className="text-xs text-zinc-400">{d.name}</span>
-                    <span className="text-xs font-semibold text-zinc-200 ml-auto pl-4">{d.value}</span>
-                  </div>
-                ))}
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-amber-500/15 flex items-center justify-center flex-shrink-0">
+                <Target size={14} className="text-amber-400" />
+              </div>
+              <div>
+                <div className="text-[10px] text-zinc-500 font-medium uppercase tracking-wide">1.2</div>
+                <CardTitle>Objectifs de l&apos;audit</CardTitle>
               </div>
             </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Avancement par entité</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-3 pt-1">
-              {barData.map(d => (
-                <div key={d.entite}>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs text-zinc-400">{d.entite}</span>
-                    <span className="text-xs text-zinc-500">{d.done} / {d.total}</span>
+          <CardContent className="flex-1">
+            <div className="space-y-3">
+              {[
+                { icon: <Map size={12} />, text: 'Cartographier les processus clés de chaque entité (commercial, devis, chantiers, SAV, RH, admin)' },
+                { icon: <FileText size={12} />, text: 'Inventorier les outils en place et identifier leurs connexions — ou absences de connexion' },
+                { icon: <CheckCircle2 size={12} />, text: 'Analyser les flux d\'information : qui génère, qui consomme, où l\'information se perd' },
+                { icon: <Target size={12} />, text: 'Identifier les cas d\'usage IA à fort impact et les quick wins prioritaires' },
+                { icon: <FileCheck size={12} />, text: 'Produire un rapport d\'audit complet avec recommandations et roadmap d\'implémentation' },
+              ].map((item, i) => (
+                <div key={i} className="flex items-start gap-2.5 group">
+                  <div className="w-5 h-5 rounded-md bg-amber-500/10 flex items-center justify-center flex-shrink-0 mt-0.5 text-amber-400">
+                    {item.icon}
                   </div>
-                  <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-amber-500 rounded-full transition-all"
-                      style={{ width: d.total > 0 ? `${(d.done / d.total) * 100}%` : '0%' }}
-                    />
-                  </div>
+                  <p className="text-xs text-zinc-400 leading-relaxed">{item.text}</p>
                 </div>
               ))}
             </div>
           </CardContent>
         </Card>
+
+        {/* 1.3 Périmètre */}
+        <Card className="flex flex-col">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-blue-500/15 flex items-center justify-center flex-shrink-0">
+                <Map size={14} className="text-blue-400" />
+              </div>
+              <div>
+                <div className="text-[10px] text-zinc-500 font-medium uppercase tracking-wide">1.3</div>
+                <CardTitle>Périmètre de l&apos;audit</CardTitle>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="flex-1">
+            <div className="space-y-2">
+              {[
+                {
+                  entite: 'DISTRI RÉSINE',
+                  scope: 'Commercial, devis, prospection, marketing',
+                  priorite: 'Haute',
+                  color: ENTITE_COLORS['Distri Résine'],
+                },
+                {
+                  entite: 'HOME RÉSINE',
+                  scope: 'Admin, facturation, SAV, RH, pose',
+                  priorite: 'Haute',
+                  color: ENTITE_COLORS['Home Résine'],
+                },
+                {
+                  entite: 'RÉSILUX',
+                  scope: 'Commercial agence, technique pose',
+                  priorite: 'Moyenne',
+                  color: ENTITE_COLORS['Résilux'],
+                },
+                {
+                  entite: 'HR CONSTRUCTION',
+                  scope: 'Chantiers, gestion poseurs, pointage',
+                  priorite: 'Moyenne',
+                  color: ENTITE_COLORS['HR Construction'],
+                },
+              ].map((row) => (
+                <div
+                  key={row.entite}
+                  className="rounded-lg p-3 border"
+                  style={{ backgroundColor: row.color + '0D', borderColor: row.color + '33' }}
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-semibold" style={{ color: row.color }}>{row.entite}</span>
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${row.priorite === 'Haute' ? 'bg-red-500/20 text-red-400' : 'bg-amber-500/20 text-amber-400'}`}>
+                      {row.priorite === 'Haute' ? '🔴' : '🟡'} {row.priorite}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-zinc-500">{row.scope}</p>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* 4.2 Règles de fonctionnement */}
+        <Card className="flex flex-col">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-purple-500/15 flex items-center justify-center flex-shrink-0">
+                <BookOpen size={14} className="text-purple-400" />
+              </div>
+              <div>
+                <div className="text-[10px] text-zinc-500 font-medium uppercase tracking-wide">4.2</div>
+                <CardTitle>Règles de fonctionnement</CardTitle>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="flex-1">
+            <div className="space-y-3">
+              {[
+                {
+                  icon: <FileText size={12} />,
+                  color: 'text-amber-400 bg-amber-500/10',
+                  text: 'Formulaire pré-audit à retourner 48h avant chaque entretien',
+                },
+                {
+                  icon: <Mic size={12} />,
+                  color: 'text-blue-400 bg-blue-500/10',
+                  text: 'Entretiens en visio — 1 personne à la fois, sans manager hiérarchique direct',
+                },
+                {
+                  icon: <CheckCircle2 size={12} />,
+                  color: 'text-emerald-400 bg-emerald-500/10',
+                  text: 'Chaque entretien est enregistré et transcrit via Fireflies',
+                },
+                {
+                  icon: <Clock3 size={12} />,
+                  color: 'text-purple-400 bg-purple-500/10',
+                  text: 'Compte-rendu produit dans les 24h et partagé à Mathieu GROSS',
+                },
+                {
+                  icon: <Plus size={12} />,
+                  color: 'text-zinc-400 bg-zinc-700/50',
+                  text: 'Entretien complémentaire (30 min) possible si information critique émerge',
+                },
+              ].map((rule, i) => (
+                <div key={i} className="flex items-start gap-2.5">
+                  <div className={`w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0 mt-0.5 ${rule.color}`}>
+                    {rule.icon}
+                  </div>
+                  <p className="text-xs text-zinc-400 leading-relaxed">{rule.text}</p>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
       </div>
 
       {/* Bloc 5 — Alertes */}

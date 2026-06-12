@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { formatDate, daysSince, isDatePassed } from '@/lib/utils'
 import { AlertTriangle, CheckCircle2, Clock, FileText, Calendar, Bell, Target, Map, BookOpen, Mic, FileCheck, Clock3, Plus } from 'lucide-react'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 
 interface Props {
@@ -100,8 +101,8 @@ export function DashboardClient({ mission, intervenants, assignations, entretien
           <div className="grid grid-cols-[auto_1fr_auto] gap-6 items-start">
             {/* Identité */}
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-amber-500/20 rounded-xl flex items-center justify-center border border-amber-500/30 flex-shrink-0">
-                <span className="text-amber-400 font-black text-sm">HR</span>
+              <div className="w-12 h-12 flex-shrink-0">
+                <Image src="/hr-logo.svg" alt="HR" width={48} height={48} className="rounded-xl" />
               </div>
               <div>
                 <div className="flex items-center gap-2">

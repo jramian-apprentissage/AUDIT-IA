@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <!-- Hexagone fond -->
+  <polygon points="60,4 108,30 108,90 60,116 12,90 12,30" fill="#1a1f2e"/>
+  <!-- Reflet gauche -->
+  <polygon points="60,4 12,30 12,90 60,116" fill="#141820"/>
+  <!-- H - lettre gauche gris foncé -->
+  <rect x="22" y="36" width="9" height="48" rx="1" fill="#4a5568"/>
+  <rect x="22" y="56" width="26" height="9" rx="1" fill="#4a5568"/>
+  <rect x="39" y="36" width="9" height="48" rx="1" fill="#4a5568"/>
+  <!-- R - lettre droite cyan -->
+  <rect x="54" y="36" width="9" height="48" rx="1" fill="#00b4c8"/>
+  <path d="M63 36 Q90 36 90 54 Q90 66 78 69 L90 84 L79 84 L68 69 L63 69 L63 84 L54 84 L54 36 Z" fill="#00b4c8"/>
+  <path d="M63 44 L63 62 Q80 62 80 53 Q80 44 63 44 Z" fill="#1a1f2e"/>
+</svg>

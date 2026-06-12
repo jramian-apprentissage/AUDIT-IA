@@ -7,6 +7,11 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "HOMERESINE — Audit Platform",
   description: "Plateforme d'audit Lean IT — Cepremium",
+  icons: {
+    icon: '/hr-logo.svg',
+    shortcut: '/hr-logo.svg',
+    apple: '/hr-logo.svg',
+  },
 };
 
 export default function RootLayout({

@@ -10,12 +10,14 @@ export default async function AuditPage() {
     { data: entretiens },
     { data: syntheses },
     { data: transcriptions },
+    { data: formulaires },
   ] = await Promise.all([
     supabase.from('intervenants').select('*').order('semaine').order('nom'),
     supabase.from('formulaire_assignation').select('*, formulaire:formulaires(*), reponses:formulaire_reponses(*)'),
     supabase.from('entretiens').select('*'),
     supabase.from('syntheses_ia').select('*'),
     supabase.from('transcriptions').select('*'),
+    supabase.from('formulaires').select('id, nom, type').eq('statut', 'publié'),
   ])
 
   return (
@@ -25,6 +27,7 @@ export default async function AuditPage() {
       entretiens={entretiens || []}
       syntheses={syntheses || []}
       transcriptions={transcriptions || []}
+      formulaires={formulaires || []}
     />
   )
 }

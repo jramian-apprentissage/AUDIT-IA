@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { formatDate, formatDateTime } from '@/lib/utils'
-import { X, Link2, CheckCircle2, Sparkles, Upload, Loader2 } from 'lucide-react'
+import { X, Link2, CheckCircle2, Sparkles, Copy, Send, ChevronDown } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
 interface Props {
@@ -16,20 +16,24 @@ interface Props {
   entretien?: Entretien
   synthese?: SyntheseIA
   transcription?: Transcription
+  formulairesDisponibles: { id: string; nom: string; type: string }[]
   onClose: () => void
   onUpdate: () => void
 }
 
 type TabId = 'formulaire' | 'entretien' | 'transcription' | 'synthese'
 
-export function FicheIntervenant({ intervenant, assignation, entretien, synthese, transcription, onClose, onUpdate }: Props) {
+export function FicheIntervenant({ intervenant, assignation, entretien, synthese, transcription, formulairesDisponibles, onClose, onUpdate }: Props) {
   const [tab, setTab] = useState<TabId>('formulaire')
   const [loading, setLoading] = useState<string | null>(null)
   const [localEntretien, setLocalEntretien] = useState(entretien)
   const [localSynthese, setLocalSynthese] = useState(synthese)
   const [localTranscription, setLocalTranscription] = useState(transcription)
+  const [localAssignation, setLocalAssignation] = useState(assignation)
   const [notes, setNotes] = useState(entretien?.notes || '')
   const [transcriptionText, setTranscriptionText] = useState(transcription?.contenu || '')
+  const [showFormPicker, setShowFormPicker] = useState(false)
+  const [copied, setCopied] = useState(false)
   const notesTimer = useRef<NodeJS.Timeout | undefined>(undefined)
   const supabase = createClient()
 
@@ -45,11 +49,39 @@ export function FicheIntervenant({ intervenant, assignation, entretien, synthese
     return () => clearTimeout(notesTimer.current)
   }, [notes])
 
+  const getFormUrl = (token: string) =>
+    `${window.location.origin}/f/${token}?nom=${encodeURIComponent(i.prenom + ' ' + i.nom)}`
+
   const copyLink = async () => {
-    if (!assignation?.token) return
-    const url = `${window.location.origin}/f/${assignation.token}?nom=${encodeURIComponent(i.prenom + ' ' + i.nom)}`
-    await navigator.clipboard.writeText(url)
-    alert('Lien copié !')
+    if (!localAssignation?.token) {
+      setShowFormPicker(true)
+      return
+    }
+    await navigator.clipboard.writeText(getFormUrl(localAssignation.token))
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  const assignerFormulaire = async (formulaireId: string) => {
+    setShowFormPicker(false)
+    setLoading('assigner')
+    // Upsert assignation
+    const { data, error } = await supabase
+      .from('formulaire_assignation')
+      .upsert(
+        { formulaire_id: formulaireId, intervenant_id: i.id, statut: 'envoyé', date_envoi: new Date().toISOString() },
+        { onConflict: 'formulaire_id,intervenant_id' }
+      )
+      .select()
+      .single()
+    if (data) {
+      setLocalAssignation(data)
+      await navigator.clipboard.writeText(getFormUrl(data.token))
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+      onUpdate()
+    }
+    setLoading(null)
   }
 
   const markAsRealise = async () => {
@@ -97,7 +129,7 @@ export function FicheIntervenant({ intervenant, assignation, entretien, synthese
       const res = await fetch('/api/ai/resume-formulaire', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ intervenant_id: i.id, assignation_id: assignation?.id }),
+        body: JSON.stringify({ intervenant_id: i.id, assignation_id: localAssignation?.id }),
       })
       const data = await res.json()
       setLocalSynthese(data.synthese)
@@ -111,7 +143,7 @@ export function FicheIntervenant({ intervenant, assignation, entretien, synthese
       const res = await fetch('/api/ai/questions-entretien', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ intervenant_id: i.id, assignation_id: assignation?.id }),
+        body: JSON.stringify({ intervenant_id: i.id, assignation_id: localAssignation?.id }),
       })
       const data = await res.json()
       setLocalSynthese(data.synthese)
@@ -190,7 +222,52 @@ export function FicheIntervenant({ intervenant, assignation, entretien, synthese
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" onClick={copyLink}><Link2 size={13} /> Lien formulaire</Button>
+          {/* Bouton formulaire — crée l'assignation si besoin */}
+          <div className="relative">
+            {localAssignation?.token ? (
+              <Button variant="ghost" size="sm" onClick={copyLink}>
+                {copied ? <CheckCircle2 size={13} className="text-emerald-400" /> : <Copy size={13} />}
+                {copied ? 'Copié !' : 'Copier le lien'}
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                loading={loading === 'assigner'}
+                onClick={() => setShowFormPicker(v => !v)}
+              >
+                <Link2 size={13} />
+                Assigner un formulaire
+                <ChevronDown size={11} />
+              </Button>
+            )}
+            {showFormPicker && (
+              <div className="absolute right-0 top-full mt-1 w-72 bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl z-50 overflow-hidden">
+                <div className="px-3 py-2 border-b border-zinc-800 text-xs font-medium text-zinc-400">
+                  Choisir un formulaire à assigner
+                </div>
+                {formulairesDisponibles.length === 0 ? (
+                  <div className="px-3 py-4 text-xs text-zinc-500 text-center">
+                    Aucun formulaire publié.<br />Créez-en un dans la section Formulaires.
+                  </div>
+                ) : (
+                  formulairesDisponibles.map(f => (
+                    <button
+                      key={f.id}
+                      onClick={() => assignerFormulaire(f.id)}
+                      className="w-full text-left px-4 py-3 hover:bg-zinc-800 transition-colors flex items-center justify-between group"
+                    >
+                      <div>
+                        <div className="text-sm text-zinc-100 group-hover:text-white">{f.nom}</div>
+                        <div className="text-[11px] text-zinc-500">{f.type}</div>
+                      </div>
+                      <Send size={12} className="text-zinc-600 group-hover:text-amber-400 transition-colors" />
+                    </button>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
           <Button variant="primary" size="sm" onClick={markAsRealise}><CheckCircle2 size={13} /> Marquer réalisé</Button>
           <button onClick={onClose} className="p-1.5 hover:bg-zinc-800 rounded text-zinc-500 hover:text-zinc-300 transition-colors ml-1">
             <X size={16} />
@@ -217,21 +294,21 @@ export function FicheIntervenant({ intervenant, assignation, entretien, synthese
         {/* ONGLET FORMULAIRE */}
         {tab === 'formulaire' && (
           <div className="space-y-4">
-            {!assignation || assignation.statut === 'non_envoyé' ? (
+            {!localAssignation || localAssignation.statut === 'non_envoyé' ? (
               <div className="text-center py-12">
                 <div className="text-zinc-500 text-sm mb-2">Formulaire non envoyé</div>
                 <Button variant="primary" size="sm" onClick={copyLink}><Link2 size={13} /> Copier le lien</Button>
               </div>
-            ) : assignation.statut === 'envoyé' ? (
+            ) : localAssignation?.statut === 'envoyé' ? (
               <div className="text-center py-12 space-y-3">
-                <Badge variant="info">Envoyé le {formatDate(assignation.date_envoi)}</Badge>
+                <Badge variant="info">Envoyé le {formatDate(localAssignation?.date_envoi)}</Badge>
                 <div className="text-zinc-500 text-sm">En attente de réponse</div>
-                <Button variant="outline" size="sm" onClick={copyLink}>Renvoyer le lien</Button>
+                <Button variant="outline" size="sm" onClick={copyLink}><Copy size={13} /> Copier le lien</Button>
               </div>
             ) : (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <Badge variant="success">Reçu le {formatDate(assignation.date_reception)}</Badge>
+                  <Badge variant="success">Reçu le {formatDate(localAssignation?.date_reception)}</Badge>
                   {!localSynthese?.resume_formulaire ? (
                     <Button variant="outline" size="sm" loading={loading === 'resume'} onClick={generateResumeFormulaire}>
                       <Sparkles size={13} /> Résumé IA

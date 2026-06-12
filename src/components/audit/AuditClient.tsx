@@ -17,9 +17,10 @@ interface Props {
   entretiens: Entretien[]
   syntheses: SyntheseIA[]
   transcriptions: Transcription[]
+  formulaires: { id: string; nom: string; type: string }[]
 }
 
-export function AuditClient({ intervenants, assignations, entretiens, syntheses, transcriptions }: Props) {
+export function AuditClient({ intervenants, assignations, entretiens, syntheses, transcriptions, formulaires }: Props) {
   const [search, setSearch] = useState('')
   const [filterEntite, setFilterEntite] = useState('')
   const [filterStatutForm, setFilterStatutForm] = useState('')
@@ -58,10 +59,13 @@ export function AuditClient({ intervenants, assignations, entretiens, syntheses,
 
   const copyFormLink = async (i: Intervenant) => {
     const a = getAssignation(i.id)
-    if (!a?.token) return
+    if (!a?.token) {
+      // Ouvrir la fiche pour assigner un formulaire
+      setSelectedId(i.id)
+      return
+    }
     const url = `${window.location.origin}/f/${a.token}?nom=${encodeURIComponent(i.prenom + ' ' + i.nom)}`
     await navigator.clipboard.writeText(url)
-    alert('Lien copié !')
   }
 
   const selected = selectedId ? localIntervenants.find(i => i.id === selectedId) || null : null
@@ -204,6 +208,7 @@ export function AuditClient({ intervenants, assignations, entretiens, syntheses,
           entretien={getEntretien(selected.id)}
           synthese={syntheses.find(s => s.intervenant_id === selected.id)}
           transcription={transcriptions.find(t => t.intervenant_id === selected.id)}
+          formulairesDisponibles={formulaires}
           onClose={() => setSelectedId(null)}
           onUpdate={handleUpdate}
         />

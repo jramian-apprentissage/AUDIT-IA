@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServiceClient } from '@/lib/supabase/server'
+import { createClient as createSupabase } from '@supabase/supabase-js'
 
 export async function POST(req: NextRequest) {
   const { assignation_id, reponses } = await req.json()
-  const supabase = createServiceClient()
+  // Utilise la clé anon — RLS est désactivé sur toutes les tables
+  const supabase = createSupabase(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
 
   // Insérer les réponses
   if (reponses?.length) {

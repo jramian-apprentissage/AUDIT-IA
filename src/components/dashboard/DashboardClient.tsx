@@ -112,12 +112,12 @@ export function DashboardClient({ mission, intervenants, assignations, entretien
               </div>
             </div>
 
-            {/* Résumé IA central */}
-            <MissionSummary
+            {/* Timeline compacte */}
+            <MiniTimeline
+              semaines={SEMAINES}
+              currentSemaine={currentSemaine}
               intervenants={intervenants}
-              assignations={assignations}
-              recus={recus}
-              totalIntervenants={totalIntervenants}
+              entretiens={entretiens}
             />
 
             {/* Insight mission */}
@@ -201,57 +201,42 @@ export function DashboardClient({ mission, intervenants, assignations, entretien
         </div>
       </div>
 
-      {/* Bloc 3 — Timeline */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Timeline de la mission</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex gap-2 items-stretch">
-            {SEMAINES.map(s => {
-              const isActive = s.num === currentSemaine
-              const isCurrent = s.num > 0
-              const intervsThisSemaine = intervenants.filter(i => i.semaine === s.num)
+      {/* Bloc 3 — IA : résumé inputs + potentiel agent */}
+      <div className="grid grid-cols-2 gap-4">
+        <Card>
+          <CardContent className="py-5">
+            <div className="text-[10px] font-semibold text-zinc-500 uppercase tracking-widest flex items-center gap-1.5 mb-3">
+              <span className="w-3.5 h-3.5 rounded-sm bg-amber-500/20 flex items-center justify-center">
+                <span className="text-amber-400 text-[8px] font-black">IA</span>
+              </span>
+              Résumé des inputs reçus
+            </div>
+            <InputsSummaryText
+              intervenants={intervenants}
+              assignations={assignations}
+              recus={recus}
+              totalIntervenants={totalIntervenants}
+            />
+          </CardContent>
+        </Card>
 
-              return (
-                <div
-                  key={s.num}
-                  className={`flex-1 rounded-lg p-3 border transition-all ${isActive ? 'border-amber-500/50 bg-amber-500/10' : 'border-zinc-800 bg-zinc-900/50'}`}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-bold" style={{ color: s.color }}>{s.label}</span>
-                    {isActive && <span className="text-[10px] bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded">En cours</span>}
-                  </div>
-                  <div className="text-[11px] text-zinc-400 mb-3">{s.desc}</div>
-                  {s.num > 0 && (
-                    <div className="flex flex-wrap gap-1">
-                      {intervsThisSemaine.map(i => {
-                        const e = entretiens.find(e => e.intervenant_id === i.id)
-                        const isRealise = e?.statut === 'Réalisé'
-                        const isPlanifie = e?.statut === 'Planifié'
-                        const isEnRetard = e?.date_prevue && isDatePassed(e.date_prevue) && !isRealise
-                        return (
-                          <div
-                            key={i.id}
-                            title={`${i.prenom} ${i.nom}`}
-                            className={`w-2.5 h-2.5 rounded-full ${isRealise ? 'bg-emerald-500' : isEnRetard ? 'bg-red-500' : isPlanifie ? 'bg-zinc-400' : 'bg-zinc-700'}`}
-                          />
-                        )
-                      })}
-                    </div>
-                  )}
-                </div>
-              )
-            })}
-          </div>
-          <div className="flex items-center gap-4 mt-3 text-[11px] text-zinc-500">
-            <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> Réalisé</div>
-            <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-zinc-400" /> Planifié</div>
-            <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-red-500" /> En retard</div>
-            <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-zinc-700" /> À planifier</div>
-          </div>
-        </CardContent>
-      </Card>
+        <Card className="border-amber-500/20 bg-amber-500/5">
+          <CardContent className="py-5">
+            <div className="text-[10px] font-semibold text-amber-500/70 uppercase tracking-widest flex items-center gap-1.5 mb-3">
+              <span className="w-3.5 h-3.5 rounded-sm bg-amber-500/20 flex items-center justify-center">
+                <span className="text-amber-400 text-[8px] font-black">→</span>
+              </span>
+              Potentiel agent IA
+            </div>
+            <AgentPotentialText
+              intervenants={intervenants}
+              assignations={assignations}
+              recus={recus}
+              totalIntervenants={totalIntervenants}
+            />
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Bloc 4 — Mission : Objectifs, Périmètre, Règles */}
       <div className="grid grid-cols-3 gap-4">
@@ -439,67 +424,157 @@ export function DashboardClient({ mission, intervenants, assignations, entretien
   )
 }
 
-function MissionSummary({ intervenants, assignations, recus, totalIntervenants }: {
+function MiniTimeline({ semaines, currentSemaine, intervenants, entretiens }: {
+  semaines: { num: number; label: string; desc: string; color: string }[]
+  currentSemaine: number
   intervenants: Intervenant[]
-  assignations: FormulaireAssignation[]
-  recus: number
-  totalIntervenants: number
+  entretiens: Entretien[]
 }) {
-  // Intervenants ayant répondu
+  return (
+    <div className="border-l border-zinc-800 pl-6 flex flex-col justify-center gap-2">
+      <div className="text-[10px] font-semibold text-zinc-500 uppercase tracking-widest mb-1">Timeline mission</div>
+      <div className="flex gap-1.5 items-center">
+        {semaines.map((s, idx) => {
+          const isActive = s.num === currentSemaine
+          const isPast = s.num < currentSemaine
+          const intervsThisSemaine = intervenants.filter(i => i.semaine === s.num)
+          const realises = intervsThisSemaine.filter(i => entretiens.find(e => e.intervenant_id === i.id && e.statut === 'Réalisé')).length
+
+          return (
+            <div key={s.num} className="flex items-center gap-1.5 flex-1">
+              <div className={`flex-1 rounded-md px-2 py-1.5 border transition-all ${
+                isActive ? 'border-amber-500/60 bg-amber-500/10' : isPast ? 'border-zinc-700 bg-zinc-800/60' : 'border-zinc-800 bg-zinc-900/40'
+              }`}>
+                <div className="flex items-center justify-between">
+                  <span className={`text-[10px] font-bold ${isActive ? 'text-amber-400' : isPast ? 'text-zinc-400' : 'text-zinc-600'}`} style={isActive ? {} : { color: isPast ? undefined : s.color + '66' }}>
+                    {s.label}
+                  </span>
+                  {isActive && <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />}
+                  {isPast && realises > 0 && <span className="text-[9px] text-emerald-500">{realises}✓</span>}
+                </div>
+                <div className={`text-[9px] mt-0.5 leading-tight ${isActive ? 'text-zinc-400' : 'text-zinc-600'}`}>{s.desc}</div>
+                {intervsThisSemaine.length > 0 && s.num > 0 && (
+                  <div className="flex gap-0.5 mt-1 flex-wrap">
+                    {intervsThisSemaine.map(i => {
+                      const e = entretiens.find(e => e.intervenant_id === i.id)
+                      const done = e?.statut === 'Réalisé'
+                      const planned = e?.statut === 'Planifié'
+                      const late = e?.date_prevue && isDatePassed(e.date_prevue) && !done
+                      return <div key={i.id} title={`${i.prenom} ${i.nom}`} className={`w-1.5 h-1.5 rounded-full ${done ? 'bg-emerald-500' : late ? 'bg-red-500' : planned ? 'bg-zinc-400' : 'bg-zinc-700'}`} />
+                    })}
+                  </div>
+                )}
+              </div>
+              {idx < semaines.length - 1 && <div className="w-2 h-px bg-zinc-800 flex-shrink-0" />}
+            </div>
+          )
+        })}
+      </div>
+      <div className="flex items-center gap-3 text-[9px] text-zinc-600 mt-0.5">
+        <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" /> Réalisé</span>
+        <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-zinc-400 inline-block" /> Planifié</span>
+        <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block" /> En retard</span>
+        <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-zinc-700 inline-block" /> À planifier</span>
+      </div>
+    </div>
+  )
+}
+
+function getInsightData(intervenants: Intervenant[], assignations: FormulaireAssignation[], recus: number, totalIntervenants: number) {
   const repondants = assignations
     .filter(a => a.statut === 'reçu')
     .map(a => intervenants.find(i => i.id === a.intervenant_id))
     .filter(Boolean) as Intervenant[]
 
-  // Entités couvertes par les réponses reçues
   const entitesCouvertes = [...new Set(repondants.map(i => i.entite))]
   const entitesManquantes = [...new Set(
-    intervenants
-      .filter(i => !repondants.find(r => r.id === i.id))
-      .map(i => i.entite)
+    intervenants.filter(i => !repondants.find(r => r.id === i.id)).map(i => i.entite)
   )]
-
-  // Priorités représentées
   const critiqueReçus = repondants.filter(i => i.priorite === 'Critique').length
   const critiqueTotal = intervenants.filter(i => i.priorite === 'Critique').length
+  return { repondants, entitesCouvertes, entitesManquantes, critiqueReçus, critiqueTotal }
+}
 
-  // Génère le paragraphe selon l'état réel
-  let resume = ''
-  let agentPotentiel = ''
+function InputsSummaryText({ intervenants, assignations, recus, totalIntervenants }: {
+  intervenants: Intervenant[]
+  assignations: FormulaireAssignation[]
+  recus: number
+  totalIntervenants: number
+}) {
+  const { repondants, entitesCouvertes, entitesManquantes, critiqueReçus, critiqueTotal } = getInsightData(intervenants, assignations, recus, totalIntervenants)
 
   if (recus === 0) {
-    resume = `Aucune réponse reçue pour l'instant. ${totalIntervenants} intervenants ont été identifiés sur ${[...new Set(intervenants.map(i => i.entite))].length} entités. La collecte terrain n'a pas encore démarré.`
-    agentPotentiel = `Dès la première réponse, l'agent pourra cartographier les outils utilisés et identifier les premières frictions opérationnelles.`
+    return (
+      <p className="text-sm text-zinc-400 leading-relaxed">
+        Aucune réponse reçue pour l&apos;instant. <span className="text-zinc-300 font-medium">{totalIntervenants} intervenants</span> ont été identifiés sur {[...new Set(intervenants.map(i => i.entite))].length} entités. La collecte terrain n&apos;a pas encore démarré.
+      </p>
+    )
+  }
+
+  if (recus < totalIntervenants) {
+    const noms = repondants.slice(0, 4).map(i => `${i.prenom} ${i.nom.split(' ')[0]}`).join(', ')
+    const suite = repondants.length > 4 ? ` et ${repondants.length - 4} autre${repondants.length - 4 > 1 ? 's' : ''}` : ''
+    return (
+      <p className="text-sm text-zinc-400 leading-relaxed">
+        <span className="text-zinc-200 font-semibold">{recus} réponse{recus > 1 ? 's' : ''}</span> reçue{recus > 1 ? 's' : ''} — {noms}{suite}.{' '}
+        {entitesCouvertes.length > 0 && <>Entités couvertes : <span className="text-zinc-300">{entitesCouvertes.join(', ')}</span>. </>}
+        {entitesManquantes.length > 0 && <>En attente de : <span className="text-zinc-500">{entitesManquantes.join(', ')}</span>. </>}
+        {critiqueReçus < critiqueTotal && <span className="text-amber-400/80">{critiqueTotal - critiqueReçus} profil{critiqueTotal - critiqueReçus > 1 ? 's' : ''} critique{critiqueTotal - critiqueReçus > 1 ? 's' : ''} encore attendu{critiqueTotal - critiqueReçus > 1 ? 's' : ''}.</span>}
+        {critiqueReçus >= critiqueTotal && critiqueTotal > 0 && <span className="text-emerald-400"> Tous les profils critiques ont répondu.</span>}
+      </p>
+    )
+  }
+
+  const entites = [...new Set(intervenants.map(i => i.entite))]
+  return (
+    <p className="text-sm text-zinc-400 leading-relaxed">
+      <span className="text-emerald-400 font-semibold">Panel complet</span> — {recus} réponses couvrant <span className="text-zinc-300">{entites.length} entités</span> ({entites.join(', ')}). {critiqueTotal} profil{critiqueTotal > 1 ? 's' : ''} critique{critiqueTotal > 1 ? 's' : ''} inclus. Données terrain suffisantes pour l&apos;analyse complète.
+    </p>
+  )
+}
+
+function AgentPotentialText({ intervenants, assignations, recus, totalIntervenants }: {
+  intervenants: Intervenant[]
+  assignations: FormulaireAssignation[]
+  recus: number
+  totalIntervenants: number
+}) {
+  const { critiqueReçus, critiqueTotal } = getInsightData(intervenants, assignations, recus, totalIntervenants)
+
+  const lines: string[] = []
+
+  if (recus === 0) {
+    lines.push("Dès la première réponse, l'agent pourra cartographier les outils utilisés et identifier les premières frictions opérationnelles.")
+    lines.push("Avec 3 réponses ou plus, une matrice de frictions croisées devient possible entre entités.")
+    lines.push("À partir de 5 réponses, l'agent peut proposer une première liste de cas d'usage IA prioritaires.")
+  } else if (recus < 5) {
+    lines.push(`Avec ${recus} input${recus > 1 ? 's' : ''}, l'agent peut déjà générer les questions d'entretien ciblées pour chaque intervenant ayant répondu.`)
+    lines.push("Encore trop peu de données pour croiser les frictions entre entités — chaque réponse supplémentaire enrichit significativement l'analyse.")
+    lines.push(`À partir de 5 réponses, une première cartographie des outils communs et des points de rupture sera possible.`)
   } else if (recus < totalIntervenants) {
-    const noms = repondants.slice(0, 3).map(i => `${i.prenom} ${i.nom.split(' ')[0]}`).join(', ')
-    const suite = repondants.length > 3 ? ` +${repondants.length - 3}` : ''
-    resume = `${recus} réponse${recus > 1 ? 's' : ''} reçue${recus > 1 ? 's' : ''} — ${noms}${suite}. ${entitesCouvertes.length > 0 ? `Entités couvertes : ${entitesCouvertes.join(', ')}.` : ''} ${entitesManquantes.length > 0 ? `En attente de : ${entitesManquantes.join(', ')}.` : ''}`
     if (critiqueReçus >= critiqueTotal && critiqueTotal > 0) {
-      agentPotentiel = `Tous les profils critiques ont répondu — l'agent peut déjà générer une première cartographie des outils et prioriser les cas d'usage IA à fort impact.`
+      lines.push("Tous les profils critiques ont répondu — l'agent peut générer une cartographie des outils et prioriser les cas d'usage IA à fort impact dès maintenant.")
     } else {
-      agentPotentiel = `Avec ${recus} input${recus > 1 ? 's' : ''}, l'agent peut détecter les premières frictions communes et préparer les questions d'entretien ciblées. ${critiqueTotal - critiqueReçus} profil${critiqueTotal - critiqueReçus > 1 ? 's' : ''} critique${critiqueTotal - critiqueReçus > 1 ? 's' : ''} encore attendu${critiqueTotal - critiqueReçus > 1 ? 's' : ''}.`
+      lines.push(`Avec ${recus} réponses, l'agent peut croiser les frictions entre entités et identifier les outils les plus fragmentés.`)
     }
+    lines.push("Les questions d'entretien peuvent être personnalisées pour chaque intervenant selon ses réponses formulaire.")
+    lines.push("La synthèse finale sera possible dès réception des dernières réponses et entretiens.")
   } else {
-    const entites = [...new Set(intervenants.map(i => i.entite))]
-    resume = `Panel complet — ${recus} réponses couvrant ${entites.length} entités (${entites.join(', ')}). ${critiqueTotal} profils critiques inclus. Données terrain suffisantes pour l'analyse complète.`
-    agentPotentiel = `L'agent dispose de toutes les données pour produire la synthèse Lean IT : cartographie des flux, matrice des frictions, recommandations de cas d'usage IA et plan de transformation priorisé.`
+    lines.push("L'agent dispose de toutes les données pour produire la synthèse Lean IT complète.")
+    lines.push("Cartographie des flux, matrice des frictions, recommandations de cas d'usage IA et roadmap de transformation priorisée sont disponibles.")
+    lines.push("Chaque transcription d'entretien ajoutée enrichit la synthèse et affine les recommandations finales.")
   }
 
   return (
-    <div className="border-l border-zinc-800 pl-6 flex flex-col gap-2">
-      <div className="text-[10px] font-semibold text-zinc-500 uppercase tracking-widest flex items-center gap-1.5">
-        <span className="w-3.5 h-3.5 rounded-sm bg-amber-500/20 flex items-center justify-center">
-          <span className="text-amber-400 text-[8px] font-black">IA</span>
-        </span>
-        Résumé des inputs reçus
-      </div>
-      <p className="text-xs text-zinc-400 leading-relaxed">{resume}</p>
-      <div className="flex items-start gap-2 mt-1 pt-2 border-t border-zinc-800/60">
-        <div className="w-4 h-4 rounded bg-amber-500/15 flex items-center justify-center flex-shrink-0 mt-0.5">
-          <span className="text-amber-400 text-[8px] font-black">→</span>
+    <div className="space-y-3">
+      {lines.map((line, i) => (
+        <div key={i} className="flex items-start gap-2.5">
+          <div className="w-4 h-4 rounded bg-amber-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+            <span className="text-amber-400 text-[9px] font-black">{i + 1}</span>
+          </div>
+          <p className="text-sm text-amber-200/70 leading-relaxed">{line}</p>
         </div>
-        <p className="text-[11px] text-amber-400/80 leading-relaxed italic">{agentPotentiel}</p>
-      </div>
+      ))}
     </div>
   )
 }

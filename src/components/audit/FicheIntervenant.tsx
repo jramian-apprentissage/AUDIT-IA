@@ -205,7 +205,7 @@ export function FicheIntervenant({ intervenant, assignation, entretien, synthese
   ]
 
   return (
-    <div className="fixed right-0 top-14 bottom-0 w-[58%] bg-zinc-950 border-l border-zinc-800 flex flex-col z-20 overflow-hidden">
+    <div className="fixed inset-0 lg:left-auto lg:right-0 lg:top-14 lg:bottom-0 lg:w-[58%] top-0 left-0 right-0 bottom-0 bg-zinc-950 border-l border-zinc-800 flex flex-col z-50 lg:z-20 overflow-hidden">
       {/* Header */}
       <div className="px-6 py-4 border-b border-zinc-800 flex items-start justify-between">
         <div className="flex items-center gap-3">

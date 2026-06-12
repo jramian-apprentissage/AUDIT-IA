@@ -85,15 +85,15 @@ export function AuditClient({ intervenants, assignations, entretiens, syntheses,
 
   return (
     <div className="flex gap-0 relative">
-      {/* Table */}
-      <div className={`transition-all duration-300 ${selectedId ? 'w-[42%]' : 'w-full'}`}>
+      {/* Table — cachée sur mobile quand fiche ouverte */}
+      <div className={`transition-all duration-300 ${selectedId ? 'hidden lg:block lg:w-[42%]' : 'w-full'}`}>
         <div className="mb-4 flex items-center justify-between">
           <h1 className="text-lg font-semibold text-zinc-100">Intervenants <span className="text-zinc-500 text-sm font-normal">({filtered.length})</span></h1>
         </div>
 
         {/* Filtres */}
-        <div className="flex items-center gap-2 mb-4">
-          <div className="relative flex-1 max-w-xs">
+        <div className="flex flex-wrap items-center gap-2 mb-4">
+          <div className="relative flex-1 min-w-[160px]">
             <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-500" />
             <input
               value={search}
@@ -106,13 +106,13 @@ export function AuditClient({ intervenants, assignations, entretiens, syntheses,
             <option value="">Toutes entités</option>
             {['Distri Résine', 'Home Résine', 'Résilux', 'HR Construction'].map(e => <option key={e} value={e}>{e}</option>)}
           </select>
-          <select value={filterStatutForm} onChange={e => setFilterStatutForm(e.target.value)} className="bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-400 focus:outline-none">
+          <select value={filterStatutForm} onChange={e => setFilterStatutForm(e.target.value)} className="bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-400 focus:outline-none hidden sm:block">
             <option value="">Tous formulaires</option>
             <option value="non_envoyé">Non envoyé</option>
             <option value="envoyé">Envoyé</option>
             <option value="reçu">Reçu</option>
           </select>
-          <select value={filterStatutEntretien} onChange={e => setFilterStatutEntretien(e.target.value)} className="bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-400 focus:outline-none">
+          <select value={filterStatutEntretien} onChange={e => setFilterStatutEntretien(e.target.value)} className="bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-400 focus:outline-none hidden sm:block">
             <option value="">Tous entretiens</option>
             <option value="À planifier">À planifier</option>
             <option value="Planifié">Planifié</option>
@@ -121,8 +121,8 @@ export function AuditClient({ intervenants, assignations, entretiens, syntheses,
           </select>
         </div>
 
-        {/* Table */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
+        {/* Table — scroll horizontal sur mobile */}
+        <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-zinc-800">

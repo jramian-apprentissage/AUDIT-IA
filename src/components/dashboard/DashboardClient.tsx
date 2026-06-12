@@ -98,28 +98,29 @@ export function DashboardClient({ mission, intervenants, assignations, entretien
       {/* Bloc 1 — Carte identité */}
       <Card>
         <CardContent className="py-5">
-          <div className="grid grid-cols-[auto_1fr_auto] gap-6 items-start">
+          {/* Desktop: 3 colonnes / Mobile: empilé */}
+          <div className="flex flex-col lg:grid lg:grid-cols-[auto_1fr_auto] gap-4 lg:gap-6 items-start">
             {/* Identité */}
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 flex-shrink-0">
-                <Image src="/hr-logo.svg" alt="HR" width={48} height={48} className="rounded-xl" />
-              </div>
+            <div className="flex items-center gap-3">
+              <Image src="/hr-logo.svg" alt="HR" width={64} height={36} className="flex-shrink-0" style={{ objectFit: 'contain' }} />
               <div>
-                <div className="flex items-center gap-2">
-                  <h1 className="text-xl font-bold text-zinc-100">{mission?.nom_client || 'HOMERESINE'}</h1>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h1 className="text-lg lg:text-xl font-bold text-zinc-100">{mission?.nom_client || 'HOMERESINE'}</h1>
                   <span className="text-zinc-600 text-sm">{mission?.groupe}</span>
                 </div>
                 <div className="text-xs text-zinc-500 mt-0.5">{mission?.secteur}</div>
               </div>
             </div>
 
-            {/* Timeline compacte */}
-            <MiniTimeline
-              semaines={SEMAINES}
-              currentSemaine={currentSemaine}
-              intervenants={intervenants}
-              entretiens={entretiens}
-            />
+            {/* Timeline compacte — cachée sur mobile */}
+            <div className="hidden lg:block">
+              <MiniTimeline
+                semaines={SEMAINES}
+                currentSemaine={currentSemaine}
+                intervenants={intervenants}
+                entretiens={entretiens}
+              />
+            </div>
 
             {/* Insight mission */}
             <MissionInsight
@@ -149,7 +150,7 @@ export function DashboardClient({ mission, intervenants, assignations, entretien
       </Card>
 
       {/* Bloc 2 — KPIs */}
-      <div className="grid grid-cols-6 gap-3">
+      <div className="grid grid-cols-3 lg:grid-cols-6 gap-3">
         <KpiCard
           icon={<FileText size={16} />}
           label="Formulaires envoyés"
@@ -203,7 +204,7 @@ export function DashboardClient({ mission, intervenants, assignations, entretien
       </div>
 
       {/* Bloc 3 — IA : résumé inputs + potentiel agent */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card>
           <CardContent className="py-5">
             <div className="text-[10px] font-semibold text-zinc-500 uppercase tracking-widest flex items-center gap-1.5 mb-3">
@@ -240,7 +241,7 @@ export function DashboardClient({ mission, intervenants, assignations, entretien
       </div>
 
       {/* Bloc 4 — Mission : Objectifs, Périmètre, Règles */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
 
         {/* 1 Objectifs */}
         <Card className="flex flex-col">

@@ -110,24 +110,15 @@ export function DashboardClient({ mission, intervenants, assignations, entretien
                 <div className="text-xs text-zinc-500 mt-0.5">{mission?.secteur}</div>
               </div>
             </div>
-            <div className="flex items-center gap-4 text-right">
-              <div>
-                <div className="text-xs text-zinc-500">Gérant</div>
-                <div className="text-sm text-zinc-300">{mission?.gerant}</div>
-              </div>
-              <div>
-                <div className="text-xs text-zinc-500">Effectif</div>
-                <div className="text-sm text-zinc-300">~{mission?.effectif_estime} pers.</div>
-              </div>
-              <div>
-                <div className="text-xs text-zinc-500">Phase</div>
-                <div className="text-sm text-zinc-300">{mission?.phase_courante}</div>
-              </div>
-              <div>
-                <div className="text-xs text-zinc-500">Démarrage</div>
-                <div className="text-sm text-zinc-300">{formatDate(mission?.date_demarrage)}</div>
-              </div>
-            </div>
+            <MissionInsight
+              totalIntervenants={totalIntervenants}
+              envoyes={envoyes}
+              recus={recus}
+              planifies={planifies}
+              realises={realises}
+              currentSemaine={currentSemaine}
+              semaines={SEMAINES}
+            />
           </div>
           {/* Entités */}
           <div className="flex items-center gap-2 mt-4">
@@ -433,6 +424,64 @@ export function DashboardClient({ mission, intervenants, assignations, entretien
           <span className="text-sm text-zinc-400">Aucune alerte — tout est à jour.</span>
         </div>
       )}
+    </div>
+  )
+}
+
+function MissionInsight({
+  totalIntervenants, envoyes, recus, planifies, realises, currentSemaine, semaines,
+}: {
+  totalIntervenants: number
+  envoyes: number
+  recus: number
+  planifies: number
+  realises: number
+  currentSemaine: number
+  semaines: { num: number; label: string; desc: string; color: string }[]
+}) {
+  // Génère une phrase de synthèse contextuelle selon l'avancement réel
+  const lines: { dot: string; text: string }[] = []
+
+  const pctEnvoyes = totalIntervenants > 0 ? Math.round((envoyes / totalIntervenants) * 100) : 0
+  const pctRecus = totalIntervenants > 0 ? Math.round((recus / totalIntervenants) * 100) : 0
+
+  if (envoyes === 0) {
+    lines.push({ dot: 'bg-zinc-600', text: `Formulaires pas encore envoyés — ${totalIntervenants} intervenants à couvrir` })
+  } else if (recus === 0) {
+    lines.push({ dot: 'bg-amber-500', text: `${envoyes} formulaire${envoyes > 1 ? 's' : ''} envoyé${envoyes > 1 ? 's' : ''} — en attente de réponses (${pctEnvoyes}% du panel)` })
+  } else if (recus < totalIntervenants) {
+    lines.push({ dot: 'bg-emerald-500', text: `${recus} réponse${recus > 1 ? 's' : ''} reçue${recus > 1 ? 's' : ''} sur ${totalIntervenants} — ${pctRecus}% du panel couvert` })
+  } else {
+    lines.push({ dot: 'bg-emerald-500', text: `Tous les formulaires reçus — panel complet (${totalIntervenants}/${totalIntervenants})` })
+  }
+
+  if (realises === 0 && planifies === 0) {
+    lines.push({ dot: 'bg-zinc-600', text: 'Aucun entretien planifié pour l\'instant' })
+  } else if (realises === 0) {
+    lines.push({ dot: 'bg-blue-400', text: `${planifies} entretien${planifies > 1 ? 's' : ''} planifié${planifies > 1 ? 's' : ''} — phase terrain à venir` })
+  } else if (realises < totalIntervenants) {
+    lines.push({ dot: 'bg-purple-400', text: `${realises} entretien${realises > 1 ? 's' : ''} réalisé${realises > 1 ? 's' : ''} · ${planifies} en attente — terrain en cours` })
+  } else {
+    lines.push({ dot: 'bg-emerald-500', text: `Tous les entretiens réalisés — prêt pour la synthèse finale` })
+  }
+
+  const semaineActuelle = semaines[currentSemaine]
+  lines.push({ dot: 'bg-amber-500/60', text: `${semaineActuelle.label} en cours — ${semaineActuelle.desc}` })
+
+  return (
+    <div className="flex flex-col justify-center gap-1.5 min-w-[280px] max-w-[340px]">
+      <div className="text-[10px] font-semibold text-zinc-500 uppercase tracking-widest mb-0.5 flex items-center gap-1.5">
+        <span className="w-3.5 h-3.5 rounded-sm bg-amber-500/20 flex items-center justify-center">
+          <span className="text-amber-400 text-[8px] font-black">IA</span>
+        </span>
+        Insight mission
+      </div>
+      {lines.map((l, i) => (
+        <div key={i} className="flex items-start gap-2">
+          <div className={`w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0 ${l.dot}`} />
+          <span className="text-xs text-zinc-400 leading-snug">{l.text}</span>
+        </div>
+      ))}
     </div>
   )
 }

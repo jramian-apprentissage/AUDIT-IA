@@ -1,0 +1,496 @@
+'use client'
+
+import { useState, useEffect, useRef } from 'react'
+import { Intervenant, FormulaireAssignation, Entretien, SyntheseIA, Transcription, ENTITE_COLORS } from '@/types'
+import { Avatar } from '@/components/ui/avatar'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import { formatDate, formatDateTime } from '@/lib/utils'
+import { X, Link2, CheckCircle2, Sparkles, Upload, Loader2 } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
+
+interface Props {
+  intervenant: Intervenant
+  assignation?: FormulaireAssignation
+  entretien?: Entretien
+  synthese?: SyntheseIA
+  transcription?: Transcription
+  onClose: () => void
+  onUpdate: () => void
+}
+
+type TabId = 'formulaire' | 'entretien' | 'transcription' | 'synthese'
+
+export function FicheIntervenant({ intervenant, assignation, entretien, synthese, transcription, onClose, onUpdate }: Props) {
+  const [tab, setTab] = useState<TabId>('formulaire')
+  const [loading, setLoading] = useState<string | null>(null)
+  const [localEntretien, setLocalEntretien] = useState(entretien)
+  const [localSynthese, setLocalSynthese] = useState(synthese)
+  const [localTranscription, setLocalTranscription] = useState(transcription)
+  const [notes, setNotes] = useState(entretien?.notes || '')
+  const [transcriptionText, setTranscriptionText] = useState(transcription?.contenu || '')
+  const notesTimer = useRef<NodeJS.Timeout | undefined>(undefined)
+  const supabase = createClient()
+
+  const i = intervenant
+
+  // Autosave notes
+  useEffect(() => {
+    if (!localEntretien) return
+    clearTimeout(notesTimer.current)
+    notesTimer.current = setTimeout(async () => {
+      await supabase.from('entretiens').update({ notes }).eq('id', localEntretien.id)
+    }, 1500)
+    return () => clearTimeout(notesTimer.current)
+  }, [notes])
+
+  const copyLink = async () => {
+    if (!assignation?.token) return
+    const url = `${window.location.origin}/f/${assignation.token}?nom=${encodeURIComponent(i.prenom + ' ' + i.nom)}`
+    await navigator.clipboard.writeText(url)
+    alert('Lien copié !')
+  }
+
+  const markAsRealise = async () => {
+    if (!localEntretien) {
+      // Create entretien
+      const { data } = await supabase.from('entretiens')
+        .insert({ intervenant_id: i.id, statut: 'Réalisé', notes })
+        .select().single()
+      if (data) setLocalEntretien(data)
+    } else {
+      await supabase.from('entretiens').update({ statut: 'Réalisé' }).eq('id', localEntretien.id)
+      setLocalEntretien({ ...localEntretien, statut: 'Réalisé' })
+    }
+    await supabase.from('intervenants').update({ statut_entretien: 'Réalisé' }).eq('id', i.id)
+    onUpdate()
+  }
+
+  const updateDateEntretien = async (date: string) => {
+    if (!localEntretien) {
+      const { data } = await supabase.from('entretiens')
+        .insert({ intervenant_id: i.id, date_prevue: date, statut: 'Planifié', notes })
+        .select().single()
+      if (data) setLocalEntretien(data)
+      await supabase.from('intervenants').update({ statut_entretien: 'Planifié', date_entretien: date }).eq('id', i.id)
+    } else {
+      await supabase.from('entretiens').update({ date_prevue: date, statut: 'Planifié' }).eq('id', localEntretien.id)
+      setLocalEntretien({ ...localEntretien, date_prevue: date, statut: 'Planifié' })
+      await supabase.from('intervenants').update({ statut_entretien: 'Planifié', date_entretien: date }).eq('id', i.id)
+    }
+    onUpdate()
+  }
+
+  const toggleTheme = async (themeId: string) => {
+    if (!localEntretien) return
+    const updated = (localEntretien.themes || []).map((t: any) =>
+      t.id === themeId ? { ...t, checked: !t.checked } : t
+    )
+    await supabase.from('entretiens').update({ themes: updated }).eq('id', localEntretien.id)
+    setLocalEntretien({ ...localEntretien, themes: updated })
+  }
+
+  const generateResumeFormulaire = async () => {
+    setLoading('resume')
+    try {
+      const res = await fetch('/api/ai/resume-formulaire', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ intervenant_id: i.id, assignation_id: assignation?.id }),
+      })
+      const data = await res.json()
+      setLocalSynthese(data.synthese)
+    } catch (e) { console.error(e) }
+    setLoading(null)
+  }
+
+  const generateQuestions = async () => {
+    setLoading('questions')
+    try {
+      const res = await fetch('/api/ai/questions-entretien', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ intervenant_id: i.id, assignation_id: assignation?.id }),
+      })
+      const data = await res.json()
+      setLocalSynthese(data.synthese)
+    } catch (e) { console.error(e) }
+    setLoading(null)
+  }
+
+  const analyseTranscription = async () => {
+    setLoading('analyse')
+    try {
+      const res = await fetch('/api/ai/analyse-transcription', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ intervenant_id: i.id, contenu: transcriptionText }),
+      })
+      const data = await res.json()
+      setLocalTranscription(data.transcription)
+    } catch (e) { console.error(e) }
+    setLoading(null)
+  }
+
+  const generateSynthese = async () => {
+    setLoading('synthese')
+    try {
+      const res = await fetch('/api/ai/synthese-finale', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ intervenant_id: i.id }),
+      })
+      const data = await res.json()
+      setLocalSynthese(data.synthese)
+    } catch (e) { console.error(e) }
+    setLoading(null)
+  }
+
+  const saveTranscription = async () => {
+    const { data } = await supabase
+      .from('transcriptions')
+      .upsert({ intervenant_id: i.id, contenu: transcriptionText, source: 'collage' }, { onConflict: 'intervenant_id' })
+      .select().single()
+    if (data) setLocalTranscription(data)
+  }
+
+  const defaultThemes = [
+    { id: 'taches', libelle: 'Tâches quotidiennes & organisation', checked: false },
+    { id: 'outils', libelle: 'Outils utilisés & maîtrise', checked: false },
+    { id: 'frictions', libelle: 'Frictions & irritants', checked: false },
+    { id: 'communication', libelle: 'Communication interne / externe', checked: false },
+    { id: 'donnees', libelle: 'Gestion des données & reporting', checked: false },
+    { id: 'ia', libelle: 'Vision & posture vis-à-vis de l\'IA', checked: false },
+  ]
+  const themes = localEntretien?.themes?.length ? localEntretien.themes : defaultThemes
+
+  const tabs: { id: TabId; label: string }[] = [
+    { id: 'formulaire', label: 'Formulaire' },
+    { id: 'entretien', label: 'Entretien' },
+    { id: 'transcription', label: 'Transcription' },
+    { id: 'synthese', label: 'Synthèse' },
+  ]
+
+  return (
+    <div className="fixed right-0 top-14 bottom-0 w-[58%] bg-zinc-950 border-l border-zinc-800 flex flex-col z-20 overflow-hidden">
+      {/* Header */}
+      <div className="px-6 py-4 border-b border-zinc-800 flex items-start justify-between">
+        <div className="flex items-center gap-3">
+          <Avatar prenom={i.prenom} nom={i.nom} entite={i.entite} size="lg" />
+          <div>
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg font-semibold text-zinc-100">{i.prenom} {i.nom}</h2>
+              <Badge variant={i.priorite === 'Critique' ? 'danger' : i.priorite === 'Haute' ? 'warning' : 'success'}>
+                {i.priorite}
+              </Badge>
+            </div>
+            <div className="text-sm text-zinc-400">{i.poste}</div>
+            <div className="text-xs mt-0.5" style={{ color: ENTITE_COLORS[i.entite] }}>{i.entite} · {i.duree_entretien} min</div>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="sm" onClick={copyLink}><Link2 size={13} /> Lien formulaire</Button>
+          <Button variant="primary" size="sm" onClick={markAsRealise}><CheckCircle2 size={13} /> Marquer réalisé</Button>
+          <button onClick={onClose} className="p-1.5 hover:bg-zinc-800 rounded text-zinc-500 hover:text-zinc-300 transition-colors ml-1">
+            <X size={16} />
+          </button>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex border-b border-zinc-800 px-6">
+        {tabs.map(t => (
+          <button
+            key={t.id}
+            onClick={() => setTab(t.id)}
+            className={`px-4 py-3 text-sm transition-colors border-b-2 -mb-px ${tab === t.id ? 'border-amber-500 text-amber-400' : 'border-transparent text-zinc-500 hover:text-zinc-300'}`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto p-6">
+
+        {/* ONGLET FORMULAIRE */}
+        {tab === 'formulaire' && (
+          <div className="space-y-4">
+            {!assignation || assignation.statut === 'non_envoyé' ? (
+              <div className="text-center py-12">
+                <div className="text-zinc-500 text-sm mb-2">Formulaire non envoyé</div>
+                <Button variant="primary" size="sm" onClick={copyLink}><Link2 size={13} /> Copier le lien</Button>
+              </div>
+            ) : assignation.statut === 'envoyé' ? (
+              <div className="text-center py-12 space-y-3">
+                <Badge variant="info">Envoyé le {formatDate(assignation.date_envoi)}</Badge>
+                <div className="text-zinc-500 text-sm">En attente de réponse</div>
+                <Button variant="outline" size="sm" onClick={copyLink}>Renvoyer le lien</Button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Badge variant="success">Reçu le {formatDate(assignation.date_reception)}</Badge>
+                  {!localSynthese?.resume_formulaire ? (
+                    <Button variant="outline" size="sm" loading={loading === 'resume'} onClick={generateResumeFormulaire}>
+                      <Sparkles size={13} /> Résumé IA
+                    </Button>
+                  ) : null}
+                </div>
+
+                {localSynthese?.resume_formulaire && (
+                  <div className="bg-amber-500/5 border border-amber-500/20 rounded-xl p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Sparkles size={13} className="text-amber-400" />
+                      <span className="text-xs font-semibold text-amber-400">Résumé IA</span>
+                    </div>
+                    <ul className="space-y-1.5">
+                      {localSynthese.resume_formulaire.points.map((p, i) => (
+                        <li key={i} className="text-sm text-zinc-300 flex gap-2">
+                          <span className="text-amber-500 mt-0.5">·</span> {p}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Réponses */}
+                {(assignation as any).reponses && (
+                  <div className="space-y-3">
+                    <div className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Réponses</div>
+                    {((assignation as any).reponses as any[]).map((r: any, idx: number) => (
+                      <div key={idx} className="bg-zinc-900 border border-zinc-800 rounded-lg p-3">
+                        <div className="text-xs text-zinc-500 mb-1">Question {idx + 1}</div>
+                        <div className="text-sm text-zinc-200">
+                          {typeof r.reponse === 'string' ? r.reponse : JSON.stringify(r.reponse)}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ONGLET ENTRETIEN */}
+        {tab === 'entretien' && (
+          <div className="space-y-5">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs font-medium text-zinc-400 block mb-1">Date & heure</label>
+                <input
+                  type="datetime-local"
+                  defaultValue={localEntretien?.date_prevue ? localEntretien.date_prevue.slice(0, 16) : ''}
+                  onChange={e => updateDateEntretien(e.target.value)}
+                  className="bg-zinc-800 border border-zinc-700 rounded-md px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:ring-1 focus:ring-amber-500/50 w-full"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-zinc-400 block mb-1">Durée réelle (min)</label>
+                <input
+                  type="number"
+                  defaultValue={localEntretien?.duree_reelle || ''}
+                  onBlur={async e => {
+                    if (localEntretien) {
+                      await supabase.from('entretiens').update({ duree_reelle: parseInt(e.target.value) }).eq('id', localEntretien.id)
+                    }
+                  }}
+                  className="bg-zinc-800 border border-zinc-700 rounded-md px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:ring-1 focus:ring-amber-500/50 w-full"
+                  placeholder={String(i.duree_entretien)}
+                />
+              </div>
+            </div>
+
+            {/* Thèmes */}
+            <div>
+              <div className="text-xs font-semibold text-zinc-400 uppercase tracking-wide mb-3">Thèmes à couvrir</div>
+              <div className="space-y-2">
+                {themes.map((t: any) => (
+                  <label key={t.id} className="flex items-center gap-3 cursor-pointer group">
+                    <input
+                      type="checkbox"
+                      checked={t.checked}
+                      onChange={() => toggleTheme(t.id)}
+                      className="w-4 h-4 rounded border-zinc-600 accent-amber-500"
+                    />
+                    <span className={`text-sm ${t.checked ? 'text-zinc-500 line-through' : 'text-zinc-300'}`}>{t.libelle}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Questions IA */}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <div className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Questions personnalisées IA</div>
+                {!localSynthese?.questions_generees && (
+                  <Button variant="outline" size="sm" loading={loading === 'questions'} onClick={generateQuestions}>
+                    <Sparkles size={13} /> Générer
+                  </Button>
+                )}
+              </div>
+              {localSynthese?.questions_generees ? (
+                <div className="space-y-2">
+                  {localSynthese.questions_generees.questions.map((q, idx) => (
+                    <div key={idx} className="bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-2.5 text-sm text-zinc-300 flex gap-2">
+                      <span className="text-amber-500 font-medium flex-shrink-0">{idx + 1}.</span> {q}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-xs text-zinc-600 italic">Générez les questions personnalisées à partir des réponses au formulaire.</div>
+              )}
+            </div>
+
+            {/* Notes */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <div className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Mes notes d&apos;entretien</div>
+                <span className="text-[10px] text-zinc-600">Autosauvegarde</span>
+              </div>
+              <textarea
+                value={notes}
+                onChange={e => setNotes(e.target.value)}
+                placeholder="Prends tes notes ici pendant l'entretien..."
+                rows={10}
+                className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:ring-1 focus:ring-amber-500/50 resize-none font-mono"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* ONGLET TRANSCRIPTION */}
+        {tab === 'transcription' && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4 h-[calc(100vh-320px)]">
+              {/* Panneau gauche */}
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center justify-between">
+                  <div className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Transcription</div>
+                  <Button variant="outline" size="sm" onClick={saveTranscription}>Sauvegarder</Button>
+                </div>
+                <textarea
+                  value={transcriptionText}
+                  onChange={e => setTranscriptionText(e.target.value)}
+                  placeholder="Collez ici la transcription de l'entretien..."
+                  className="flex-1 w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:ring-1 focus:ring-amber-500/50 resize-none font-mono leading-relaxed"
+                />
+                {transcriptionText && (
+                  <Button variant="primary" loading={loading === 'analyse'} onClick={analyseTranscription}>
+                    <Sparkles size={13} /> Analyser avec l&apos;IA
+                  </Button>
+                )}
+              </div>
+
+              {/* Panneau droit */}
+              <div className="flex flex-col gap-3">
+                <div className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Analyse IA</div>
+                {localTranscription?.analyse_ia ? (
+                  <div className="flex-1 overflow-y-auto space-y-3">
+                    <AnalyseSection titre="Résumé" items={localTranscription.analyse_ia.resume} />
+                    <AnalyseSection titre="Outils mentionnés" items={localTranscription.analyse_ia.outils} />
+                    <AnalyseSection titre="Frictions identifiées" items={localTranscription.analyse_ia.frictions} />
+                    <AnalyseSection titre="Cas d'usage IA" items={localTranscription.analyse_ia.cas_usage_ia} />
+                    <AnalyseSection titre="Questions sans réponse" items={localTranscription.analyse_ia.questions_sans_reponse} />
+                    <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-3">
+                      <div className="text-xs font-semibold text-zinc-500 mb-1">Maturité digitale</div>
+                      <Badge variant={localTranscription.analyse_ia.maturite_digitale === 'Élevé' ? 'success' : localTranscription.analyse_ia.maturite_digitale === 'Moyen' ? 'warning' : 'danger'}>
+                        {localTranscription.analyse_ia.maturite_digitale}
+                      </Badge>
+                      <div className="text-xs text-zinc-400 mt-2">{localTranscription.analyse_ia.maturite_justification}</div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex-1 bg-zinc-900 border border-zinc-800 rounded-xl flex items-center justify-center text-zinc-600 text-sm">
+                    L'analyse apparaîtra ici
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ONGLET SYNTHESE */}
+        {tab === 'synthese' && (
+          <div className="space-y-4">
+            {!localTranscription?.contenu ? (
+              <div className="text-center py-12 text-zinc-500 text-sm">
+                La synthèse nécessite au minimum une transcription chargée.
+              </div>
+            ) : !localSynthese?.synthese_finale ? (
+              <div className="text-center py-12 space-y-3">
+                <div className="text-zinc-400 text-sm">Prêt à générer la synthèse complète</div>
+                <Button variant="primary" loading={loading === 'synthese'} onClick={generateSynthese}>
+                  <Sparkles size={14} /> Générer la synthèse IA
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Sparkles size={14} className="text-amber-400" />
+                    <span className="text-sm font-semibold text-amber-400">Synthèse IA complète</span>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={generateSynthese} loading={loading === 'synthese'}>Régénérer</Button>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <SyntheseBlock titre="Profil digital" content={localSynthese.synthese_finale.profil_digital} />
+                  <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
+                    <div className="text-xs font-semibold text-zinc-500 mb-2">Posture IA</div>
+                    <Badge variant={localSynthese.synthese_finale.posture_ia === 'enthousiaste' ? 'success' : localSynthese.synthese_finale.posture_ia === 'neutre' ? 'warning' : 'danger'}>
+                      {localSynthese.synthese_finale.posture_ia}
+                    </Badge>
+                  </div>
+                </div>
+
+                <SyntheseListBlock titre="Douleurs principales" items={localSynthese.synthese_finale.douleurs} />
+                <SyntheseListBlock titre="Outils clés" items={localSynthese.synthese_finale.outils_cles} />
+                <SyntheseListBlock titre="Recommandations IA" items={localSynthese.synthese_finale.recommandations} />
+                <SyntheseBlock titre="Cas d'usage prioritaire" content={localSynthese.synthese_finale.cas_usage_prioritaire} />
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function AnalyseSection({ titre, items }: { titre: string; items: string[] }) {
+  if (!items?.length) return null
+  return (
+    <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-3">
+      <div className="text-xs font-semibold text-zinc-500 mb-2">{titre}</div>
+      <ul className="space-y-1">
+        {items.map((item, i) => (
+          <li key={i} className="text-xs text-zinc-300 flex gap-1.5"><span className="text-amber-500">·</span>{item}</li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+function SyntheseBlock({ titre, content }: { titre: string; content: string }) {
+  return (
+    <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
+      <div className="text-xs font-semibold text-zinc-500 mb-2">{titre}</div>
+      <p className="text-sm text-zinc-300">{content}</p>
+    </div>
+  )
+}
+
+function SyntheseListBlock({ titre, items }: { titre: string; items: string[] }) {
+  return (
+    <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
+      <div className="text-xs font-semibold text-zinc-500 mb-2">{titre}</div>
+      <ul className="space-y-1.5">
+        {items?.map((item, i) => (
+          <li key={i} className="text-sm text-zinc-300 flex gap-2"><span className="text-amber-500 mt-0.5">·</span>{item}</li>
+        ))}
+      </ul>
+    </div>
+  )
+}

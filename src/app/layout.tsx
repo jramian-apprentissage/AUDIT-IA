@@ -5,12 +5,12 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "HOMERESINE — Audit Platform",
+  title: "OMEO",
   description: "Plateforme d'audit Lean IT — OMEO",
   icons: {
-    icon: '/hr-logo.svg',
-    shortcut: '/hr-logo.svg',
-    apple: '/hr-logo.svg',
+    icon: '/omeo-logo.svg',
+    shortcut: '/omeo-logo.svg',
+    apple: '/omeo-logo.svg',
   },
 };
 

@@ -106,7 +106,7 @@ export function Sidebar() {
           </div>
           <div>
             <div className="text-[11px] text-zinc-300 font-medium">{isReadOnly ? 'Admin' : 'Jimmy Ramian'}</div>
-            <div className="text-[10px] text-zinc-600">Cepremium</div>
+            <div className="text-[10px] text-zinc-600">OMEO</div>
           </div>
         </div>
         <button onClick={logout} title="Déconnexion" className="text-zinc-600 hover:text-zinc-300 transition-colors p-1">

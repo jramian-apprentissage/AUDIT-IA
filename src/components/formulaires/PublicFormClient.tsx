@@ -104,10 +104,10 @@ export function PublicFormClient({ assignation, formulaire, intervenant, interve
           </div>
           <h2 className="text-2xl font-bold text-zinc-800 mb-3">Merci !</h2>
           <p className="text-zinc-500 text-sm leading-relaxed">
-            Vos réponses ont bien été enregistrées. L'équipe Cepremium vous contactera prochainement pour planifier votre entretien.
+            Vos réponses ont bien été enregistrées. L'équipe OMEO vous contactera prochainement pour planifier votre entretien.
           </p>
           <div className="mt-8 pt-6 border-t border-zinc-100 text-xs text-zinc-400">
-            Mission Audit Lean IT — HOMERESINE · Cepremium
+            Mission Audit Lean IT — HOMERESINE · OMEO
           </div>
         </div>
       </div>
@@ -127,7 +127,7 @@ export function PublicFormClient({ assignation, formulaire, intervenant, interve
             </div>
             <div>
               <div className="text-xs font-bold text-zinc-800 leading-none">HOMERESINE</div>
-              <div className="text-[10px] text-zinc-400 leading-none mt-0.5">Audit Lean IT · Cepremium</div>
+              <div className="text-[10px] text-zinc-400 leading-none mt-0.5">Audit Lean IT · OMEO</div>
             </div>
           </div>
           <div className="flex items-center gap-3">

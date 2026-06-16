@@ -4,14 +4,13 @@ import { verifySessionToken } from '@/lib/auth'
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
 
-  // Routes publiques : login, formulaire public par token, API
+  // Routes publiques : login, formulaire public par token, API, fichiers statiques (public/)
   if (
     pathname.startsWith('/login') ||
     pathname.startsWith('/f/') ||
     pathname.startsWith('/api/') ||
     pathname.startsWith('/_next/') ||
-    pathname === '/hr-logo.svg' ||
-    pathname === '/favicon.ico'
+    /\.[a-zA-Z0-9]+$/.test(pathname)
   ) {
     return NextResponse.next()
   }

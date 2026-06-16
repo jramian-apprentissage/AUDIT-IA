@@ -11,7 +11,7 @@ const ACCOUNTS: Account[] = [
   { email: 'admin@omeo.mg', password: 'admin.1234', role: 'full' },
 ]
 
-const SECRET = process.env.AUTH_SECRET || 'homeresine-audit-cepremium-fallback-secret'
+const SECRET = process.env.AUTH_SECRET || 'homeresine-audit-omeo-fallback-secret'
 
 export function findAccount(email: string, password: string): Account | null {
   const acc = ACCOUNTS.find(a => a.email.toLowerCase() === email.trim().toLowerCase() && a.password === password)

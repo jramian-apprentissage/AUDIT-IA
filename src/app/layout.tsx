@@ -6,7 +6,7 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "HOMERESINE — Audit Platform",
-  description: "Plateforme d'audit Lean IT — Cepremium",
+  description: "Plateforme d'audit Lean IT — OMEO",
   icons: {
     icon: '/hr-logo.svg',
     shortcut: '/hr-logo.svg',

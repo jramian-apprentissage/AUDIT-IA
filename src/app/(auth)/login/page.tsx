@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import Image from 'next/image'
 import { Lock, Mail, ArrowRight, ShieldCheck, Eye } from 'lucide-react'
 
 export default function LoginPage() {
@@ -36,27 +35,31 @@ export default function LoginPage() {
   return (
     <div
       className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden"
-      style={{ background: 'radial-gradient(circle at 30% 20%, rgba(17,148,162,0.10), transparent 50%), linear-gradient(180deg, #0a0c12 0%, #050608 100%)' }}
+      style={{ background: 'radial-gradient(circle at 25% 15%, rgba(255,204,0,0.08), transparent 45%), radial-gradient(circle at 80% 85%, rgba(26,63,160,0.12), transparent 45%), #0a0a0c' }}
     >
-      {/* Glow décoratif */}
-      <div className="absolute top-1/4 left-1/4 w-72 h-72 rounded-full blur-3xl opacity-20" style={{ background: '#1194A2' }} />
-      <div className="absolute bottom-1/4 right-1/4 w-72 h-72 rounded-full blur-3xl opacity-10" style={{ background: '#1194A2' }} />
+      {/* Glows décoratifs aux couleurs OMEO */}
+      <div className="absolute top-0 left-0 w-96 h-96 rounded-full blur-3xl opacity-[0.12]" style={{ background: '#FFCC00' }} />
+      <div className="absolute bottom-0 right-0 w-96 h-96 rounded-full blur-3xl opacity-[0.15]" style={{ background: '#1A3FA0' }} />
 
       <div className="w-full max-w-sm relative z-10">
-        {/* Logo */}
-        <div className="flex flex-col items-center mb-8">
-          <div className="w-20 h-20 rounded-2xl flex items-center justify-center mb-4" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
-            <Image src="/hr-logo.svg" alt="HR" width={64} height={36} style={{ objectFit: 'contain' }} />
+        {/* Logo OMEO */}
+        <div className="flex flex-col items-center mb-7">
+          <div className="w-24 h-24 rounded-2xl flex items-center justify-center mb-4 p-3" style={{ background: 'rgba(255,255,255,0.97)' }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/omeo-logo.svg" alt="OMEO" width={80} height={68} style={{ objectFit: 'contain' }} />
           </div>
-          <h1 className="text-lg font-bold text-zinc-100 tracking-wide">HOMERESINE</h1>
-          <p className="text-xs mt-1" style={{ color: '#1194A2' }}>Audit Platform · Cepremium</p>
+          <div className="rounded-xl px-4 py-2.5" style={{ background: 'rgba(255,255,255,0.97)' }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/omeo-texte.svg" alt="L'humain au coeur du métier" width={210} height={62} style={{ objectFit: 'contain' }} />
+          </div>
+          <p className="text-[11px] text-zinc-500 mt-2 tracking-wide">Plateforme d&apos;audit · Mission HOMERESINE</p>
         </div>
 
         {/* Carte login */}
         <form
           onSubmit={handleSubmit}
           className="rounded-2xl p-6 space-y-4"
-          style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)', backdropFilter: 'blur(20px)' }}
+          style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.08)', backdropFilter: 'blur(20px)' }}
         >
           <div>
             <label className="text-[11px] font-medium text-zinc-500 uppercase tracking-wide mb-1.5 block">Email</label>
@@ -67,10 +70,10 @@ export default function LoginPage() {
                 required
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                placeholder="admin@exemple.fr"
+                placeholder="admin@omeo.mg"
                 className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl pl-9 pr-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:ring-1 transition-all"
                 style={{ borderColor: 'rgba(255,255,255,0.08)' }}
-                onFocus={e => (e.target.style.borderColor = '#1194A2')}
+                onFocus={e => (e.target.style.borderColor = '#2B5FD9')}
                 onBlur={e => (e.target.style.borderColor = 'rgba(255,255,255,0.08)')}
               />
             </div>
@@ -88,7 +91,7 @@ export default function LoginPage() {
                 placeholder="••••••••"
                 className="w-full bg-zinc-900/60 border border-zinc-800 rounded-xl pl-9 pr-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:ring-1 transition-all"
                 style={{ borderColor: 'rgba(255,255,255,0.08)' }}
-                onFocus={e => (e.target.style.borderColor = '#1194A2')}
+                onFocus={e => (e.target.style.borderColor = '#2B5FD9')}
                 onBlur={e => (e.target.style.borderColor = 'rgba(255,255,255,0.08)')}
               />
             </div>
@@ -104,9 +107,11 @@ export default function LoginPage() {
             type="submit"
             disabled={loading}
             className="w-full flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold text-white transition-all disabled:opacity-50"
-            style={{ background: 'linear-gradient(135deg, #1194A2, #0d7a87)' }}
+            style={{ background: 'linear-gradient(135deg, #FFCC00 0%, #2FB6D8 55%, #1A3FA0 100%)' }}
           >
-            {loading ? 'Connexion…' : <>Se connecter <ArrowRight size={15} /></>}
+            <span style={{ color: '#0a0a0c' }} className="font-bold flex items-center gap-2">
+              {loading ? 'Connexion…' : <>Se connecter <ArrowRight size={15} /></>}
+            </span>
           </button>
 
           <div className="flex items-center justify-center gap-4 pt-1 text-[10px] text-zinc-600">
@@ -116,7 +121,7 @@ export default function LoginPage() {
         </form>
 
         <p className="text-center text-[11px] text-zinc-600 mt-6">
-          Mission Audit Lean IT — HOMERESINE · Groupe Gross
+          Audit Lean IT — HOMERESINE × OMEO
         </p>
       </div>
     </div>

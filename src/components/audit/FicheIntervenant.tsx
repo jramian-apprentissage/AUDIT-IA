@@ -7,8 +7,9 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { formatDate, formatDateTime } from '@/lib/utils'
-import { X, Link2, CheckCircle2, Sparkles, Copy, Send, ChevronDown, Clock } from 'lucide-react'
+import { X, Link2, CheckCircle2, Sparkles, Copy, Send, ChevronDown, Clock, Eye } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { useRole } from '@/components/providers/RoleProvider'
 
 interface Props {
   intervenant: Intervenant
@@ -36,6 +37,7 @@ export function FicheIntervenant({ intervenant, assignation, entretien, synthese
   const [copied, setCopied] = useState(false)
   const notesTimer = useRef<NodeJS.Timeout | undefined>(undefined)
   const supabase = createClient()
+  const { isReadOnly } = useRole()
 
   const i = intervenant
 
@@ -229,7 +231,7 @@ export function FicheIntervenant({ intervenant, assignation, entretien, synthese
                 {copied ? <CheckCircle2 size={13} className="text-emerald-400" /> : <Copy size={13} />}
                 {copied ? 'Copié !' : 'Copier le lien'}
               </Button>
-            ) : (
+            ) : !isReadOnly ? (
               <Button
                 variant="outline"
                 size="sm"
@@ -240,6 +242,8 @@ export function FicheIntervenant({ intervenant, assignation, entretien, synthese
                 Assigner un formulaire
                 <ChevronDown size={11} />
               </Button>
+            ) : (
+              <span className="text-xs text-zinc-600 flex items-center gap-1"><Eye size={11} /> Non assigné</span>
             )}
             {showFormPicker && (
               <div className="absolute right-0 top-full mt-1 w-72 bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl z-50 overflow-hidden">
@@ -268,7 +272,7 @@ export function FicheIntervenant({ intervenant, assignation, entretien, synthese
               </div>
             )}
           </div>
-          <Button variant="primary" size="sm" onClick={markAsRealise}><CheckCircle2 size={13} /> Marquer réalisé</Button>
+          {!isReadOnly && <Button variant="primary" size="sm" onClick={markAsRealise}><CheckCircle2 size={13} /> Marquer réalisé</Button>}
           <button onClick={onClose} className="p-1.5 hover:bg-zinc-800 rounded text-zinc-500 hover:text-zinc-300 transition-colors ml-1">
             <X size={16} />
           </button>
@@ -322,7 +326,7 @@ export function FicheIntervenant({ intervenant, assignation, entretien, synthese
                 <div className="flex items-center justify-between">
                   <Badge variant="success">Reçu le {formatDate(localAssignation.date_reception)}</Badge>
                   {!localSynthese?.resume_formulaire && (
-                    <Button variant="outline" size="sm" loading={loading === 'resume'} onClick={generateResumeFormulaire}>
+                    <Button variant="outline" size="sm" loading={loading === 'resume'} disabled={isReadOnly} onClick={generateResumeFormulaire}>
                       <Sparkles size={13} /> Résumé IA
                     </Button>
                   )}
@@ -431,7 +435,7 @@ export function FicheIntervenant({ intervenant, assignation, entretien, synthese
               <div className="flex items-center justify-between mb-3">
                 <div className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Questions personnalisées IA</div>
                 {localAssignation?.statut === 'reçu' && !localSynthese?.questions_generees && (
-                  <Button variant="outline" size="sm" loading={loading === 'questions'} onClick={generateQuestions}>
+                  <Button variant="outline" size="sm" loading={loading === 'questions'} disabled={isReadOnly} onClick={generateQuestions}>
                     <Sparkles size={13} /> Générer
                   </Button>
                 )}
@@ -479,7 +483,7 @@ export function FicheIntervenant({ intervenant, assignation, entretien, synthese
               <div className="flex flex-col gap-3">
                 <div className="flex items-center justify-between">
                   <div className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">Transcription</div>
-                  <Button variant="outline" size="sm" onClick={saveTranscription}>Sauvegarder</Button>
+                  <Button variant="outline" size="sm" onClick={saveTranscription} disabled={isReadOnly}>Sauvegarder</Button>
                 </div>
                 <textarea
                   value={transcriptionText}
@@ -488,7 +492,7 @@ export function FicheIntervenant({ intervenant, assignation, entretien, synthese
                   className="flex-1 w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:ring-1 focus:ring-amber-500/50 resize-none font-mono leading-relaxed"
                 />
                 {transcriptionText && (
-                  <Button variant="primary" loading={loading === 'analyse'} onClick={analyseTranscription}>
+                  <Button variant="primary" loading={loading === 'analyse'} disabled={isReadOnly} onClick={analyseTranscription}>
                     <Sparkles size={13} /> Analyser avec l&apos;IA
                   </Button>
                 )}
@@ -532,7 +536,7 @@ export function FicheIntervenant({ intervenant, assignation, entretien, synthese
             ) : !localSynthese?.synthese_finale ? (
               <div className="text-center py-12 space-y-3">
                 <div className="text-zinc-400 text-sm">Prêt à générer la synthèse complète</div>
-                <Button variant="primary" loading={loading === 'synthese'} onClick={generateSynthese}>
+                <Button variant="primary" loading={loading === 'synthese'} disabled={isReadOnly} onClick={generateSynthese}>
                   <Sparkles size={14} /> Générer la synthèse IA
                 </Button>
               </div>
@@ -543,7 +547,7 @@ export function FicheIntervenant({ intervenant, assignation, entretien, synthese
                     <Sparkles size={14} className="text-amber-400" />
                     <span className="text-sm font-semibold text-amber-400">Synthèse IA complète</span>
                   </div>
-                  <Button variant="outline" size="sm" onClick={generateSynthese} loading={loading === 'synthese'}>Régénérer</Button>
+                  <Button variant="outline" size="sm" onClick={generateSynthese} loading={loading === 'synthese'} disabled={isReadOnly}>Régénérer</Button>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">

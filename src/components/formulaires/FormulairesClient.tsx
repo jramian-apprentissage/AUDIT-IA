@@ -8,6 +8,7 @@ import { formatDate } from '@/lib/utils'
 import { Plus, Eye, Edit, Copy, Archive, Link2, ExternalLink } from 'lucide-react'
 import { FormulaireBuilder } from './FormulaireBuilder'
 import { createClient } from '@/lib/supabase/client'
+import { useRole } from '@/components/providers/RoleProvider'
 
 interface Props {
   formulaires: Formulaire[]
@@ -20,6 +21,7 @@ export function FormulairesClient({ formulaires: initial, assignations, interven
   const [editing, setEditing] = useState<Formulaire | null>(null)
   const [creating, setCreating] = useState(false)
   const supabase = createClient()
+  const { isReadOnly } = useRole()
 
   const refresh = async () => {
     const { data } = await supabase.from('formulaires').select('*').order('created_at', { ascending: false })
@@ -75,7 +77,7 @@ export function FormulairesClient({ formulaires: initial, assignations, interven
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-lg font-semibold text-zinc-100">Formulaires</h1>
-        <Button variant="primary" onClick={handleNew}><Plus size={14} /> Créer un formulaire</Button>
+        {!isReadOnly && <Button variant="primary" onClick={handleNew}><Plus size={14} /> Créer un formulaire</Button>}
       </div>
 
       <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
@@ -109,13 +111,17 @@ export function FormulairesClient({ formulaires: initial, assignations, interven
                 </td>
                 <td className="px-5 py-3">
                   <div className="flex items-center justify-end gap-1">
-                    <ActionBtn icon={<Edit size={13} />} label="Éditer" onClick={() => handleEdit(f)} />
-                    <ActionBtn icon={<Copy size={13} />} label="Dupliquer" onClick={() => handleDuplicate(f)} />
                     {f.statut === 'publié' && (
                       <ActionBtn icon={<Link2 size={13} />} label="Copier lien" onClick={() => copyPublicLink(f)} />
                     )}
-                    {f.statut !== 'archivé' && (
-                      <ActionBtn icon={<Archive size={13} />} label="Archiver" onClick={() => handleArchive(f)} />
+                    {!isReadOnly && (
+                      <>
+                        <ActionBtn icon={<Edit size={13} />} label="Éditer" onClick={() => handleEdit(f)} />
+                        <ActionBtn icon={<Copy size={13} />} label="Dupliquer" onClick={() => handleDuplicate(f)} />
+                        {f.statut !== 'archivé' && (
+                          <ActionBtn icon={<Archive size={13} />} label="Archiver" onClick={() => handleArchive(f)} />
+                        )}
+                      </>
                     )}
                   </div>
                 </td>

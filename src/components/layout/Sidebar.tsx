@@ -2,9 +2,10 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { LayoutDashboard, ClipboardList, FileText, ChevronRight } from 'lucide-react'
+import { LayoutDashboard, ClipboardList, FileText, ChevronRight, Eye, LogOut } from 'lucide-react'
+import { useRole } from '@/components/providers/RoleProvider'
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, desc: 'Vue d\'ensemble' },
@@ -14,6 +15,14 @@ const navItems = [
 
 export function Sidebar() {
   const pathname = usePathname()
+  const router = useRouter()
+  const { isReadOnly } = useRole()
+
+  const logout = async () => {
+    await fetch('/api/auth/logout', { method: 'POST' })
+    router.push('/login')
+    router.refresh()
+  }
 
   return (
     <aside
@@ -43,6 +52,14 @@ export function Sidebar() {
         <div className="text-[9px] font-semibold uppercase tracking-widest mb-0.5" style={{ color: 'rgba(17,148,162,0.6)' }}>Mission active</div>
         <div className="text-[11px] text-zinc-300 font-medium leading-tight">Lean IT · Groupe Gross</div>
       </div>
+
+      {/* Badge rôle */}
+      {isReadOnly && (
+        <div className="mx-3 mt-2 px-3 py-1.5 rounded-lg flex items-center gap-1.5" style={{ background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.18)' }}>
+          <Eye size={11} className="text-amber-400" />
+          <span className="text-[10px] text-amber-400 font-medium">Lecture seule</span>
+        </div>
+      )}
 
       {/* Navigation */}
       <nav className="flex-1 px-2 py-4 flex flex-col gap-0.5">
@@ -81,17 +98,20 @@ export function Sidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="px-4 py-4 border-t" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
+      <div className="px-4 py-4 border-t flex items-center justify-between" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
         <div className="flex items-center gap-2.5">
           <div className="w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-bold text-white flex-shrink-0"
             style={{ background: 'linear-gradient(135deg, #1194A2, #0d7a87)' }}>
-            J
+            {isReadOnly ? 'A' : 'J'}
           </div>
           <div>
-            <div className="text-[11px] text-zinc-300 font-medium">Jimmy Ramian</div>
+            <div className="text-[11px] text-zinc-300 font-medium">{isReadOnly ? 'Admin' : 'Jimmy Ramian'}</div>
             <div className="text-[10px] text-zinc-600">Cepremium</div>
           </div>
         </div>
+        <button onClick={logout} title="Déconnexion" className="text-zinc-600 hover:text-zinc-300 transition-colors p-1">
+          <LogOut size={14} />
+        </button>
       </div>
     </aside>
   )

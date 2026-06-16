@@ -34,9 +34,9 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row">
-      {/* Colonne connexion — top sur mobile (order-1), droite sur desktop (order-2) */}
+      {/* Colonne connexion — pleine largeur sur mobile, droite sur desktop */}
       <div
-        className="order-1 lg:order-2 flex-1 lg:w-1/2 flex items-center justify-center px-4 py-14 lg:py-12 relative overflow-hidden"
+        className="flex-1 lg:w-1/2 flex items-center justify-center px-4 py-14 lg:py-12 relative overflow-hidden"
         style={{ background: 'radial-gradient(circle at 50% 30%, rgba(255,255,255,0.02), transparent 60%), #0a0a0c' }}
       >
         {/* Halos Aurora */}
@@ -55,7 +55,15 @@ export default function LoginPage() {
           />
         </div>
 
-        <div className="w-full max-w-sm relative z-10 animate-form-in">
+        {/* Badge logo mobile uniquement — colonne blanche cachée sous lg */}
+        <div className="lg:hidden absolute top-8 left-1/2 -translate-x-1/2 z-10">
+          <div className="w-16 h-16 rounded-2xl flex items-center justify-center p-2.5" style={{ background: 'rgba(255,255,255,0.97)' }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/omeo-logo.svg" alt="OMEO" width={52} height={44} style={{ objectFit: 'contain' }} />
+          </div>
+        </div>
+
+        <div className="w-full max-w-sm relative z-10 animate-form-in mt-20 lg:mt-0">
           <form
             onSubmit={handleSubmit}
             className="rounded-2xl p-7 backdrop-blur-xl"
@@ -132,8 +140,8 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* Colonne branding — bas sur mobile (order-2), gauche sur desktop (order-1) */}
-      <div className="order-2 lg:order-1 lg:w-1/2 bg-white flex items-center justify-center relative overflow-hidden p-10 lg:p-12">
+      {/* Colonne branding — masquée sur mobile, visible à gauche sur desktop */}
+      <div className="hidden lg:flex lg:w-1/2 bg-white items-center justify-center relative overflow-hidden p-12">
         <div className="absolute -top-24 -left-24 w-72 h-72 rounded-full opacity-[0.06]" style={{ background: '#2563EB' }} />
         <div className="absolute -bottom-24 -right-24 w-72 h-72 rounded-full opacity-[0.06]" style={{ background: '#FFC400' }} />
 

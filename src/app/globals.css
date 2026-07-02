@@ -14,6 +14,12 @@ body {
   box-sizing: border-box;
 }
 
+/* Tailwind v4 met cursor:default sur les boutons — rétablir le pointeur */
+button:not(:disabled),
+[role="button"]:not(:disabled) {
+  cursor: pointer;
+}
+
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -50,3 +56,12 @@ body {
   to { opacity: 1; transform: translateY(0); }
 }
 .animate-form-in { animation: form-fade-up 0.7s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+/* Respect de la préférence utilisateur : réduire les animations */
+@media (prefers-reduced-motion: reduce) {
+  .aurora-1, .aurora-2, .aurora-3,
+  .animate-form-in,
+  .animate-pulse {
+    animation: none !important;
+  }
+}

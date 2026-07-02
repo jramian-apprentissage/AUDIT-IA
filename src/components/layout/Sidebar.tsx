@@ -89,7 +89,7 @@ export function Sidebar() {
               </div>
               <div className="flex-1 min-w-0">
                 <div className={active ? 'text-zinc-100' : 'text-zinc-400 group-hover:text-zinc-200'}>{label}</div>
-                <div className="text-[10px] text-zinc-600 group-hover:text-zinc-500 transition-colors">{desc}</div>
+                <div className="text-[11px] text-zinc-500 group-hover:text-zinc-400 transition-colors">{desc}</div>
               </div>
               {active && <ChevronRight size={12} style={{ color: '#1194A2' }} className="opacity-60" />}
             </Link>
@@ -109,8 +109,8 @@ export function Sidebar() {
             <div className="text-[10px] text-zinc-600">OMEO</div>
           </div>
         </div>
-        <button onClick={logout} title="Déconnexion" className="text-zinc-600 hover:text-zinc-300 transition-colors p-1">
-          <LogOut size={14} />
+        <button onClick={logout} title="Déconnexion" aria-label="Se déconnecter" className="text-zinc-500 hover:text-zinc-300 transition-colors p-2.5 rounded-lg hover:bg-zinc-800/60 cursor-pointer">
+          <LogOut size={15} />
         </button>
       </div>
     </aside>

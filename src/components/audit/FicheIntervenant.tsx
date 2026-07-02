@@ -41,6 +41,13 @@ export function FicheIntervenant({ intervenant, assignation, entretien, synthese
 
   const i = intervenant
 
+  // Fermeture au clavier (Escape)
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
+
   // Autosave notes
   useEffect(() => {
     if (!localEntretien) return
@@ -273,7 +280,7 @@ export function FicheIntervenant({ intervenant, assignation, entretien, synthese
             )}
           </div>
           {!isReadOnly && <Button variant="primary" size="sm" onClick={markAsRealise}><CheckCircle2 size={13} /> Marquer réalisé</Button>}
-          <button onClick={onClose} className="p-1.5 hover:bg-zinc-800 rounded text-zinc-500 hover:text-zinc-300 transition-colors ml-1">
+          <button onClick={onClose} aria-label="Fermer la fiche" className="p-2.5 hover:bg-zinc-800 rounded-lg text-zinc-500 hover:text-zinc-300 transition-colors ml-1 cursor-pointer">
             <X size={16} />
           </button>
         </div>

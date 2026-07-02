@@ -20,14 +20,14 @@ export function Header({ mission }: HeaderProps) {
         borderBottom: '1px solid rgba(255,255,255,0.06)',
       }}
     >
-      {/* Logo + mission */}
+      {/* Logo (mobile uniquement — la sidebar l'affiche sur desktop) + mission */}
       <div className="flex items-center gap-2 lg:gap-3">
         <Image
           src="/hr-logo.svg"
-          alt="HR"
+          alt="Logo Homeresine"
           width={44}
           height={25}
-          className="flex-shrink-0"
+          className="flex-shrink-0 lg:hidden"
           style={{ objectFit: 'contain' }}
         />
         <div className="flex items-center gap-2">
@@ -51,7 +51,7 @@ export function Header({ mission }: HeaderProps) {
         <Badge variant="success">{mission?.statut || 'En cours'}</Badge>
         <div
           className="text-[11px] px-3 py-1 rounded-md hidden sm:block"
-          style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.35)' }}
+          style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.55)' }}
         >
           {today}
         </div>

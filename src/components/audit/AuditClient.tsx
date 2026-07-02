@@ -99,20 +99,21 @@ export function AuditClient({ intervenants, assignations, entretiens, syntheses,
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Rechercher..."
+              aria-label="Rechercher un intervenant"
               className="w-full bg-zinc-900 border border-zinc-800 rounded-lg pl-8 pr-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:ring-1 focus:ring-amber-500/50"
             />
           </div>
-          <select value={filterEntite} onChange={e => setFilterEntite(e.target.value)} className="bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-400 focus:outline-none">
+          <select value={filterEntite} onChange={e => setFilterEntite(e.target.value)} aria-label="Filtrer par entité" className="bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-400 focus:outline-none focus:ring-1 focus:ring-amber-500/50">
             <option value="">Toutes entités</option>
             {['Distri Résine', 'Home Résine', 'Résilux', 'HR Construction'].map(e => <option key={e} value={e}>{e}</option>)}
           </select>
-          <select value={filterStatutForm} onChange={e => setFilterStatutForm(e.target.value)} className="bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-400 focus:outline-none hidden sm:block">
+          <select value={filterStatutForm} onChange={e => setFilterStatutForm(e.target.value)} aria-label="Filtrer par statut formulaire" className="bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-400 focus:outline-none focus:ring-1 focus:ring-amber-500/50">
             <option value="">Tous formulaires</option>
             <option value="non_envoyé">Non envoyé</option>
             <option value="envoyé">Envoyé</option>
             <option value="reçu">Reçu</option>
           </select>
-          <select value={filterStatutEntretien} onChange={e => setFilterStatutEntretien(e.target.value)} className="bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-400 focus:outline-none hidden sm:block">
+          <select value={filterStatutEntretien} onChange={e => setFilterStatutEntretien(e.target.value)} aria-label="Filtrer par statut entretien" className="bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-400 focus:outline-none focus:ring-1 focus:ring-amber-500/50">
             <option value="">Tous entretiens</option>
             <option value="À planifier">À planifier</option>
             <option value="Planifié">Planifié</option>
@@ -131,8 +132,7 @@ export function AuditClient({ intervenants, assignations, entretiens, syntheses,
                 {!selectedId && <th className="text-left px-4 py-3 text-xs font-medium text-zinc-500">Entité</th>}
                 <th className="text-left px-4 py-3 text-xs font-medium text-zinc-500">Priorité</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-zinc-500">Formulaire</th>
-                {!selectedId && <th className="text-left px-4 py-3 text-xs font-medium text-zinc-500">Entretien</th>}
-                <th className="text-left px-4 py-3 text-xs font-medium text-zinc-500">Statut</th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-zinc-500">Entretien</th>
                 <th className="text-right px-4 py-3 text-xs font-medium text-zinc-500">Actions</th>
               </tr>
             </thead>
@@ -171,24 +171,23 @@ export function AuditClient({ intervenants, assignations, entretiens, syntheses,
                         {a?.statut === 'reçu' ? 'Reçu' : a?.statut === 'envoyé' ? 'Envoyé' : 'Non envoyé'}
                       </Badge>
                     </td>
-                    {!selectedId && (
-                      <td className="px-4 py-3 text-xs text-zinc-400">
-                        {e?.date_prevue ? formatDate(e.date_prevue) : '—'}
-                      </td>
-                    )}
                     <td className="px-4 py-3">
                       <Badge variant={statut === 'Réalisé' ? 'success' : statut === 'En retard' ? 'danger' : statut === 'Planifié' ? 'info' : 'ghost'}>
                         {statut}
                       </Badge>
+                      {!selectedId && e?.date_prevue && statut !== 'Réalisé' && (
+                        <div className="text-xs text-zinc-400 mt-1 tabular-nums">{formatDate(e.date_prevue)}</div>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-1">
                         <button
                           onClick={ev => { ev.stopPropagation(); copyFormLink(i) }}
-                          className="p-1.5 hover:bg-zinc-700 rounded text-zinc-500 hover:text-zinc-300 transition-colors"
+                          className="p-2.5 hover:bg-zinc-700 rounded-lg text-zinc-500 hover:text-zinc-300 transition-colors cursor-pointer"
                           title="Copier lien formulaire"
+                          aria-label={`Copier le lien du formulaire de ${i.prenom} ${i.nom}`}
                         >
-                          <Link2 size={13} />
+                          <Link2 size={14} />
                         </button>
                       </div>
                     </td>
@@ -197,6 +196,17 @@ export function AuditClient({ intervenants, assignations, entretiens, syntheses,
               })}
             </tbody>
           </table>
+          {filtered.length === 0 && (
+            <div className="py-10 text-center">
+              <p className="text-sm text-zinc-400">Aucun intervenant ne correspond aux filtres.</p>
+              <button
+                onClick={() => { setSearch(''); setFilterEntite(''); setFilterStatutForm(''); setFilterStatutEntretien('') }}
+                className="mt-2 text-xs text-amber-400 hover:text-amber-300 transition-colors cursor-pointer"
+              >
+                Réinitialiser les filtres
+              </button>
+            </div>
+          )}
         </div>
       </div>
 

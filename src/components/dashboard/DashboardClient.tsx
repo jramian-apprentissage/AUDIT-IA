@@ -185,9 +185,9 @@ export function DashboardClient({ mission, intervenants, assignations, entretien
           color="zinc"
         />
         <div className="bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-4 flex flex-col items-center justify-center gap-2">
-          <div className="text-xs text-zinc-500 text-center">Complétion globale</div>
-          <div className="relative w-16 h-16">
-            <svg viewBox="0 0 36 36" className="w-16 h-16 -rotate-90">
+          <div className="text-xs text-zinc-400 text-center">Complétion globale</div>
+          <div className="relative w-16 h-16" role="img" aria-label={`Complétion globale de la mission : ${completionRate}%`}>
+            <svg viewBox="0 0 36 36" className="w-16 h-16 -rotate-90" aria-hidden="true">
               <circle cx="18" cy="18" r="15.9" fill="none" stroke="#27272A" strokeWidth="3" />
               <circle
                 cx="18" cy="18" r="15.9" fill="none"
@@ -324,8 +324,9 @@ export function DashboardClient({ mission, intervenants, assignations, entretien
                 >
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-xs font-semibold" style={{ color: row.color }}>{row.entite}</span>
-                    <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${row.priorite === 'Haute' ? 'bg-red-500/20 text-red-400' : 'bg-amber-500/20 text-amber-400'}`}>
-                      {row.priorite === 'Haute' ? '🔴' : '🟡'} {row.priorite}
+                    <span className={`text-[11px] px-1.5 py-0.5 rounded font-medium inline-flex items-center gap-1 ${row.priorite === 'Haute' ? 'bg-red-500/20 text-red-400' : 'bg-amber-500/20 text-amber-400'}`}>
+                      <span className="w-1.5 h-1.5 rounded-full bg-current" aria-hidden="true" />
+                      {row.priorite}
                     </span>
                   </div>
                   <p className="text-[11px] text-zinc-500">{row.scope}</p>
@@ -451,10 +452,14 @@ function MiniTimeline({ semaines, currentSemaine, intervenants, entretiens }: {
                   <span className={`text-[10px] font-bold ${isActive ? 'text-amber-400' : isPast ? 'text-zinc-400' : 'text-zinc-600'}`} style={isActive ? {} : { color: isPast ? undefined : s.color + '66' }}>
                     {s.label}
                   </span>
-                  {isActive && <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />}
-                  {isPast && realises > 0 && <span className="text-[9px] text-emerald-500">{realises}✓</span>}
+                  {isActive && <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" aria-hidden="true" />}
+                  {intervsThisSemaine.length > 0 && s.num > 0 && (
+                    <span className={`text-[10px] tabular-nums ${realises === intervsThisSemaine.length ? 'text-emerald-500' : 'text-zinc-500'}`}>
+                      {realises}/{intervsThisSemaine.length}
+                    </span>
+                  )}
                 </div>
-                <div className={`text-[9px] mt-0.5 leading-tight ${isActive ? 'text-zinc-400' : 'text-zinc-600'}`}>{s.desc}</div>
+                <div className={`text-[10px] mt-0.5 leading-tight ${isActive ? 'text-zinc-400' : 'text-zinc-500'}`}>{s.desc}</div>
                 {intervsThisSemaine.length > 0 && s.num > 0 && (
                   <div className="flex gap-0.5 mt-1 flex-wrap">
                     {intervsThisSemaine.map(i => {
@@ -472,7 +477,7 @@ function MiniTimeline({ semaines, currentSemaine, intervenants, entretiens }: {
           )
         })}
       </div>
-      <div className="flex items-center gap-3 text-[9px] text-zinc-600 mt-0.5">
+      <div className="flex items-center gap-3 text-[10px] text-zinc-500 mt-0.5">
         <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" /> Réalisé</span>
         <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-zinc-400 inline-block" /> Planifié</span>
         <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block" /> En retard</span>
@@ -656,9 +661,9 @@ function KpiCard({ icon, label, value, sub, color }: {
   return (
     <div className="bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-4">
       <div className={`mb-2 ${colorMap[color]}`}>{icon}</div>
-      <div className="text-lg font-bold text-zinc-100">{value}</div>
-      {sub && <div className="text-[11px] text-zinc-500 mt-0.5">{sub}</div>}
-      <div className="text-[11px] text-zinc-600 mt-1">{label}</div>
+      <div className="text-lg font-bold text-zinc-100 tabular-nums">{value}</div>
+      {sub && <div className="text-xs text-zinc-500 mt-0.5">{sub}</div>}
+      <div className="text-xs text-zinc-400 mt-1">{label}</div>
     </div>
   )
 }

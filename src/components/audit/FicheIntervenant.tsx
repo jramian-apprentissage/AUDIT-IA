@@ -453,13 +453,7 @@ export function FicheIntervenant({ intervenant, assignation, entretien, synthese
                   <span className="text-xs text-zinc-600">Disponible une fois le formulaire reçu.</span>
                 </div>
               ) : localSynthese?.questions_generees ? (
-                <div className="space-y-2">
-                  {localSynthese.questions_generees.questions.map((q, idx) => (
-                    <div key={idx} className="bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-2.5 text-sm text-zinc-300 flex gap-2">
-                      <span className="text-amber-500 font-medium flex-shrink-0">{idx + 1}.</span> {q}
-                    </div>
-                  ))}
-                </div>
+                <QuestionsGroupees questions={localSynthese.questions_generees.questions} />
               ) : (
                 <div className="text-xs text-zinc-500 italic">Cliquez sur &quot;Générer&quot; pour obtenir des questions personnalisées basées sur les réponses.</div>
               )}
@@ -703,4 +697,55 @@ function ReponseDisplay({ reponse, type, colonnes, outils_fixes }: {
   }
 
   return <span className="text-sm text-zinc-300">{JSON.stringify(reponse)}</span>
+}
+
+/* Questions d'entretien regroupées par bloc.
+   Format attendu : "[Bloc 1 — Titre · 8 min] Question…" puis "[Bloc 1] Question…"
+   Les questions sans préfixe vont dans un groupe unique sans en-tête. */
+function QuestionsGroupees({ questions }: { questions: string[] }) {
+  type Groupe = { titre: string | null; items: string[] }
+  const groupes: Groupe[] = []
+  const reFull = /^\[Bloc\s*(\d+)\s*[—–-]\s*([^\]]+)\]\s*/i
+  const reShort = /^\[Bloc\s*(\d+)\]\s*/i
+
+  for (const q of questions) {
+    const mFull = q.match(reFull)
+    const mShort = q.match(reShort)
+    if (mFull) {
+      groupes.push({ titre: `Bloc ${mFull[1]} — ${mFull[2].trim()}`, items: [q.replace(reFull, '')] })
+    } else if (mShort && groupes.length > 0) {
+      groupes[groupes.length - 1].items.push(q.replace(reShort, ''))
+    } else if (groupes.length > 0 && groupes[groupes.length - 1].titre === null) {
+      groupes[groupes.length - 1].items.push(q)
+    } else if (mShort) {
+      groupes.push({ titre: `Bloc ${mShort[1]}`, items: [q.replace(reShort, '')] })
+    } else {
+      groupes.push({ titre: null, items: [q] })
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      {groupes.map((g, gi) => (
+        <div key={gi}>
+          {g.titre && (
+            <div className="sticky top-0 z-10 -mx-1 px-1 py-1.5 bg-zinc-950/95 backdrop-blur-sm">
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wide whitespace-nowrap">{g.titre}</span>
+                <span className="flex-1 h-px bg-amber-500/20" />
+                <span className="text-[10px] text-zinc-500 tabular-nums">{g.items.length} question{g.items.length > 1 ? 's' : ''}</span>
+              </div>
+            </div>
+          )}
+          <div className="space-y-2 mt-1.5">
+            {g.items.map((q, qi) => (
+              <div key={qi} className="bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-2.5 text-sm text-zinc-300 flex gap-2">
+                <span className="text-amber-500 font-medium flex-shrink-0 tabular-nums">{qi + 1}.</span> {q}
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
 }

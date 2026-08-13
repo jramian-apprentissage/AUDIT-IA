@@ -24,6 +24,7 @@ export interface Intervenant {
   duree_entretien: number
   email?: string
   telephone?: string
+  formulaire_requis: boolean
   statut_entretien: 'À planifier' | 'Planifié' | 'Réalisé' | 'En retard'
   date_entretien?: string
   notes_generales?: string

@@ -167,9 +167,13 @@ export function AuditClient({ intervenants, assignations, entretiens, syntheses,
                       </Badge>
                     </td>
                     <td className="px-4 py-3">
-                      <Badge variant={a?.statut === 'reçu' ? 'success' : a?.statut === 'envoyé' ? 'info' : 'ghost'}>
-                        {a?.statut === 'reçu' ? 'Reçu' : a?.statut === 'envoyé' ? 'Envoyé' : 'Non envoyé'}
-                      </Badge>
+                      {i.formulaire_requis === false ? (
+                        <Badge variant="ghost">Non requis</Badge>
+                      ) : (
+                        <Badge variant={a?.statut === 'reçu' ? 'success' : a?.statut === 'envoyé' ? 'info' : 'ghost'}>
+                          {a?.statut === 'reçu' ? 'Reçu' : a?.statut === 'envoyé' ? 'Envoyé' : 'Non envoyé'}
+                        </Badge>
+                      )}
                     </td>
                     <td className="px-4 py-3">
                       <Badge variant={statut === 'Réalisé' ? 'success' : statut === 'En retard' ? 'danger' : statut === 'Planifié' ? 'info' : 'ghost'}>

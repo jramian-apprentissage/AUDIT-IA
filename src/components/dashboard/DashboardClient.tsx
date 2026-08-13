@@ -27,10 +27,20 @@ const SEMAINES = [
 export function DashboardClient({ mission, intervenants, assignations, entretiens }: Props) {
   const router = useRouter()
   const totalIntervenants = intervenants.length
+  // Certains profils (poseurs, techniciens terrain génériques) n'ont pas besoin
+  // de remplir le formulaire pré-audit — seul l'entretien compte pour eux.
+  const intervenantsAvecFormulaire = intervenants.filter(i => i.formulaire_requis !== false)
+  const totalFormulairesRequis = intervenantsAvecFormulaire.length
 
   // KPIs
-  const envoyes = assignations.filter(a => a.statut === 'envoyé' || a.statut === 'reçu').length
-  const recus = assignations.filter(a => a.statut === 'reçu').length
+  const envoyes = assignations.filter(a =>
+    (a.statut === 'envoyé' || a.statut === 'reçu') &&
+    intervenantsAvecFormulaire.some(i => i.id === a.intervenant_id)
+  ).length
+  const recus = assignations.filter(a =>
+    a.statut === 'reçu' &&
+    intervenantsAvecFormulaire.some(i => i.id === a.intervenant_id)
+  ).length
   const planifies = entretiens.filter(e => e.statut === 'Planifié').length
   const realises = entretiens.filter(e => e.statut === 'Réalisé').length
   const totalPrevus = totalIntervenants
@@ -57,9 +67,11 @@ export function DashboardClient({ mission, intervenants, assignations, entretien
     })
   }
 
-  // Entretiens planifiés sans formulaire reçu
+  // Entretiens planifiés sans formulaire reçu (uniquement pour les profils qui en ont besoin)
   const entretiensSansFormulaire = entretiens.filter(e => {
     if (e.statut !== 'Planifié') return false
+    const intervenant = intervenants.find(i => i.id === e.intervenant_id)
+    if (!intervenant || intervenant.formulaire_requis === false) return false
     const a = assignations.find(a => a.intervenant_id === e.intervenant_id)
     return !a || a.statut !== 'reçu'
   })
@@ -125,6 +137,7 @@ export function DashboardClient({ mission, intervenants, assignations, entretien
             {/* Insight mission */}
             <MissionInsight
               totalIntervenants={totalIntervenants}
+              totalFormulairesRequis={totalFormulairesRequis}
               envoyes={envoyes}
               recus={recus}
               planifies={planifies}
@@ -154,15 +167,15 @@ export function DashboardClient({ mission, intervenants, assignations, entretien
         <KpiCard
           icon={<FileText size={16} />}
           label="Formulaires envoyés"
-          value={`${envoyes} / ${totalIntervenants}`}
-          sub={`${Math.round((envoyes / Math.max(totalIntervenants, 1)) * 100)}%`}
+          value={`${envoyes} / ${totalFormulairesRequis}`}
+          sub={`${Math.round((envoyes / Math.max(totalFormulairesRequis, 1)) * 100)}%`}
           color="blue"
         />
         <KpiCard
           icon={<CheckCircle2 size={16} />}
           label="Formulaires reçus"
-          value={`${recus} / ${totalIntervenants}`}
-          sub={`${Math.round((recus / Math.max(totalIntervenants, 1)) * 100)}%`}
+          value={`${recus} / ${totalFormulairesRequis}`}
+          sub={`${Math.round((recus / Math.max(totalFormulairesRequis, 1)) * 100)}%`}
           color="green"
         />
         <KpiCard
@@ -214,10 +227,10 @@ export function DashboardClient({ mission, intervenants, assignations, entretien
               Résumé des inputs reçus
             </div>
             <InputsSummaryText
-              intervenants={intervenants}
+              intervenants={intervenantsAvecFormulaire}
               assignations={assignations}
               recus={recus}
-              totalIntervenants={totalIntervenants}
+              totalIntervenants={totalFormulairesRequis}
             />
           </CardContent>
         </Card>
@@ -231,10 +244,10 @@ export function DashboardClient({ mission, intervenants, assignations, entretien
               Potentiel agent IA
             </div>
             <AgentPotentialText
-              intervenants={intervenants}
+              intervenants={intervenantsAvecFormulaire}
               assignations={assignations}
               recus={recus}
-              totalIntervenants={totalIntervenants}
+              totalIntervenants={totalFormulairesRequis}
             />
           </CardContent>
         </Card>
@@ -587,9 +600,10 @@ function AgentPotentialText({ intervenants, assignations, recus, totalIntervenan
 }
 
 function MissionInsight({
-  totalIntervenants, envoyes, recus, planifies, realises, currentSemaine, semaines,
+  totalIntervenants, totalFormulairesRequis, envoyes, recus, planifies, realises, currentSemaine, semaines,
 }: {
   totalIntervenants: number
+  totalFormulairesRequis: number
   envoyes: number
   recus: number
   planifies: number
@@ -600,17 +614,17 @@ function MissionInsight({
   // Génère une phrase de synthèse contextuelle selon l'avancement réel
   const lines: { dot: string; text: string }[] = []
 
-  const pctEnvoyes = totalIntervenants > 0 ? Math.round((envoyes / totalIntervenants) * 100) : 0
-  const pctRecus = totalIntervenants > 0 ? Math.round((recus / totalIntervenants) * 100) : 0
+  const pctEnvoyes = totalFormulairesRequis > 0 ? Math.round((envoyes / totalFormulairesRequis) * 100) : 0
+  const pctRecus = totalFormulairesRequis > 0 ? Math.round((recus / totalFormulairesRequis) * 100) : 0
 
   if (envoyes === 0) {
-    lines.push({ dot: 'bg-zinc-600', text: `Formulaires pas encore envoyés — ${totalIntervenants} intervenants à couvrir` })
+    lines.push({ dot: 'bg-zinc-600', text: `Formulaires pas encore envoyés — ${totalFormulairesRequis} intervenants à couvrir` })
   } else if (recus === 0) {
     lines.push({ dot: 'bg-amber-500', text: `${envoyes} formulaire${envoyes > 1 ? 's' : ''} envoyé${envoyes > 1 ? 's' : ''} — en attente de réponses (${pctEnvoyes}% du panel)` })
-  } else if (recus < totalIntervenants) {
-    lines.push({ dot: 'bg-emerald-500', text: `${recus} réponse${recus > 1 ? 's' : ''} reçue${recus > 1 ? 's' : ''} sur ${totalIntervenants} — ${pctRecus}% du panel couvert` })
+  } else if (recus < totalFormulairesRequis) {
+    lines.push({ dot: 'bg-emerald-500', text: `${recus} réponse${recus > 1 ? 's' : ''} reçue${recus > 1 ? 's' : ''} sur ${totalFormulairesRequis} — ${pctRecus}% du panel couvert` })
   } else {
-    lines.push({ dot: 'bg-emerald-500', text: `Tous les formulaires reçus — panel complet (${totalIntervenants}/${totalIntervenants})` })
+    lines.push({ dot: 'bg-emerald-500', text: `Tous les formulaires reçus — panel complet (${totalFormulairesRequis}/${totalFormulairesRequis})` })
   }
 
   if (realises === 0 && planifies === 0) {

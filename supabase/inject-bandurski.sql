@@ -80,8 +80,8 @@ CROSS JOIN (VALUES
 WHERE i.prenom = 'Sara' AND i.nom = 'BANDURSKI';
 
 -- 8. Questions d'entretien — mises à jour avec les données réelles du formulaire
-UPDATE syntheses_ia
-SET questions_generees = '{
+INSERT INTO syntheses_ia (intervenant_id, questions_generees, questions_generees_at)
+SELECT i.id, '{
   "questions": [
     "[Bloc 1 — Journée type & répartition du temps · 8 min] Décrivez-moi votre journée type — dans l''ordre, qu''est-ce que vous faites en arrivant le matin ?",
     "[Bloc 1] Dans votre formulaire, vous indiquez 8h sur le standard, 3h sur la facturation, 6h sur le SAV et 8h sur le courrier, tous en quotidien — sur une journée de 8h, comment ça s''articule concrètement ? Ce sont des tâches en parallèle, ou ces heures représentent autre chose (un total hebdo par exemple) ?",
@@ -106,10 +106,13 @@ SET questions_generees = '{
     "[Bloc 6 — Vision IA & adhésion · 4 min] Vous utilisez déjà ChatGPT — pour quoi faire concrètement, et à quelle fréquence ?",
     "[Bloc 6] Vous partagez régulièrement les dossiers clients avec d''autres — avec qui, et sous quelle forme aujourd''hui ?"
   ]
-}'::jsonb,
+}'::jsonb, now()
+FROM intervenants i
+WHERE i.prenom = 'Sara' AND i.nom = 'BANDURSKI'
+ON CONFLICT (intervenant_id) DO UPDATE
+SET questions_generees = EXCLUDED.questions_generees,
     questions_generees_at = now(),
-    updated_at = now()
-WHERE intervenant_id = (SELECT id FROM intervenants WHERE prenom = 'Sara' AND nom = 'BANDURSKI');
+    updated_at = now();
 
 -- ============================================================
 -- VÉRIFICATION
